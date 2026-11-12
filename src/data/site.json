@@ -1,0 +1,8 @@
+{
+  "_note": "Renseignez \"url\" avec l'adresse définitive du site (ex. https://www.prumysl.ma, sans / final) : le build générera alors sitemap.xml, les liens canoniques et les balises de partage.",
+  "url": "",
+  "name": "Prumysl",
+  "description": "Travaux électriques en courants forts et courants faibles, fourniture de matériel électrique, d'éclairage et de ventilation au Maroc.",
+  "telephone": "+212723496854",
+  "shop": "https://prumysl.cc/"
+}

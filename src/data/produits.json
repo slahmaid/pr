@@ -1,0 +1,70 @@
+{
+  "_note": "Catalogue indicatif : remplacez ces articles par vos références réelles (nom, description). Chaque article a un identifiant unique (id) et une catégorie (cat).",
+  "categories": [
+    { "id": "cables", "label": "Câbles & conduits", "icon": "i-cable", "text": "Câbles d'énergie, fils, gaines et chemins de câbles" },
+    { "id": "appareillage", "label": "Appareillage", "icon": "i-outlet", "text": "Prises, interrupteurs, commandes et boîtes d'encastrement" },
+    { "id": "protection", "label": "Protection & distribution", "icon": "i-breaker", "text": "Disjoncteurs, différentiels, coffrets et armoires" },
+    { "id": "eclairage-int", "label": "Éclairage intérieur", "icon": "i-bulb", "text": "Luminaires LED pour bureaux, commerces, industrie et logements" },
+    { "id": "eclairage-ext", "label": "Éclairage extérieur", "icon": "i-flood", "text": "Projecteurs, candélabres, bornes et appliques" },
+    { "id": "ventilation", "label": "Ventilation & air", "icon": "i-fan", "text": "Extracteurs, ventilateurs, rideaux d'air et déshumidificateurs" },
+    { "id": "courants-faibles", "label": "Courants faibles & sécurité", "icon": "i-network", "text": "Réseau, interphonie, vidéosurveillance et détection incendie" },
+    { "id": "outillage", "label": "Outillage & fixations", "icon": "i-tool", "text": "Outils d'électricien, fixations et consommables de chantier" }
+  ],
+  "products": [
+    { "id": "cable-r2v", "cat": "cables", "name": "Câble rigide U-1000 R2V", "text": "Câble d'énergie pour installations fixes, en plusieurs sections." },
+    { "id": "fil-h07v", "cat": "cables", "name": "Fil H07V-U / H07V-R", "text": "Conducteur rigide pour pose sous conduit, en plusieurs couleurs." },
+    { "id": "cable-h05vvf", "cat": "cables", "name": "Câble souple H05VV-F", "text": "Pour le raccordement des appareils mobiles." },
+    { "id": "cable-arme", "cat": "cables", "name": "Câble armé", "text": "Pour les liaisons enterrées et les environnements exposés." },
+    { "id": "gaine-icta", "cat": "cables", "name": "Gaine ICTA", "text": "Conduit annelé pour encastrement, en plusieurs diamètres." },
+    { "id": "chemin-cables", "cat": "cables", "name": "Chemin de câbles", "text": "Dalles perforées et chemins en fil, avec accessoires de pose." },
+
+    { "id": "interrupteur", "cat": "appareillage", "name": "Interrupteur va-et-vient", "text": "Simple, double ou lumineux, en encastré ou en saillie." },
+    { "id": "prise-2pt", "cat": "appareillage", "name": "Prise de courant 2P+T", "text": "Standard, à éclips de protection ou étanche." },
+    { "id": "prise-rj45", "cat": "appareillage", "name": "Prise RJ45 & TV", "text": "Prises de communication pour le réseau et la télévision." },
+    { "id": "boite-encastrement", "cat": "appareillage", "name": "Boîte d'encastrement", "text": "Pour cloisons sèches et maçonnerie, simple ou multiple." },
+    { "id": "plaques", "cat": "appareillage", "name": "Plaques de finition", "text": "Plusieurs finitions et couleurs pour s'accorder au décor." },
+    { "id": "detecteur-presence", "cat": "appareillage", "name": "Détecteur de présence", "text": "Allumage automatique pour couloirs, sanitaires et parkings." },
+
+    { "id": "disjoncteur-modulaire", "cat": "protection", "name": "Disjoncteur modulaire", "text": "Plusieurs calibres et courbes de déclenchement." },
+    { "id": "differentiel", "cat": "protection", "name": "Interrupteur différentiel 30 mA", "text": "Protection des personnes contre les défauts d'isolement." },
+    { "id": "boitier-moule", "cat": "protection", "name": "Disjoncteur boîtier moulé", "text": "Pour les départs de forte puissance." },
+    { "id": "parafoudre", "cat": "protection", "name": "Parafoudre", "text": "Protection des installations contre les surtensions." },
+    { "id": "contacteur", "cat": "protection", "name": "Contacteur & télérupteur", "text": "Commande des circuits d'éclairage et des moteurs." },
+    { "id": "coffret-modulaire", "cat": "protection", "name": "Coffret modulaire", "text": "De une à plusieurs rangées, en saillie ou encastré." },
+
+    { "id": "dalle-led", "cat": "eclairage-int", "name": "Dalle LED 60×60", "text": "Pour faux plafonds de bureaux et de commerces." },
+    { "id": "spot-led", "cat": "eclairage-int", "name": "Spot encastré LED", "text": "Fixe ou orientable, en plusieurs températures de couleur." },
+    { "id": "reglette-led", "cat": "eclairage-int", "name": "Réglette LED", "text": "Pour ateliers, parkings et locaux techniques." },
+    { "id": "suspension-industrielle", "cat": "eclairage-int", "name": "Suspension industrielle LED", "text": "Éclairage grande hauteur pour entrepôts et halls." },
+    { "id": "hublot-led", "cat": "eclairage-int", "name": "Hublot LED", "text": "Étanche, pour escaliers, caves et extérieurs couverts." },
+    { "id": "baes", "cat": "eclairage-int", "name": "Bloc autonome de sécurité", "text": "Éclairage de sécurité pour l'évacuation des bâtiments." },
+
+    { "id": "projecteur-led", "cat": "eclairage-ext", "name": "Projecteur LED", "text": "Pour façades, parkings et terrains, en plusieurs puissances." },
+    { "id": "candelabre", "cat": "eclairage-ext", "name": "Candélabre", "text": "Mâts et lanternes pour voiries et espaces publics." },
+    { "id": "borne", "cat": "eclairage-ext", "name": "Borne d'éclairage", "text": "Pour allées, jardins et cheminements." },
+    { "id": "applique-ext", "cat": "eclairage-ext", "name": "Applique murale extérieure", "text": "Étanche, pour façades et entrées." },
+    { "id": "luminaire-routier", "cat": "eclairage-ext", "name": "Luminaire routier LED", "text": "Éclairage public à basse consommation." },
+    { "id": "projecteur-solaire", "cat": "eclairage-ext", "name": "Projecteur solaire", "text": "Autonome et sans raccordement : voir la gamme Prumysl Solaire." },
+
+    { "id": "extracteur-sdb", "cat": "ventilation", "name": "Extracteur de salle de bain", "text": "Silencieux, avec ou sans minuterie." },
+    { "id": "extracteur-helicoide", "cat": "ventilation", "name": "Extracteur hélicoïde", "text": "Mural ou de vitrage, pour cuisines et ateliers." },
+    { "id": "extracteur-ligne", "cat": "ventilation", "name": "Extracteur en ligne", "text": "Pour gaines de ventilation de différents diamètres." },
+    { "id": "ventilateur-plafond", "cat": "ventilation", "name": "Ventilateur de plafond", "text": "Avec ou sans éclairage, plusieurs vitesses." },
+    { "id": "rideau-air", "cat": "ventilation", "name": "Rideau d'air", "text": "Pour les entrées de commerces et d'entrepôts." },
+    { "id": "deshumidificateur", "cat": "ventilation", "name": "Déshumidificateur", "text": "Contre l'humidité dans les logements et les locaux techniques." },
+
+    { "id": "cable-cat6", "cat": "courants-faibles", "name": "Câble réseau Cat 6", "text": "Pour les réseaux informatiques, en touret ou au mètre." },
+    { "id": "baie-brassage", "cat": "courants-faibles", "name": "Baie de brassage", "text": "Murale ou au sol, avec panneaux et accessoires." },
+    { "id": "visiophone", "cat": "courants-faibles", "name": "Visiophone", "text": "Kits pour maisons individuelles et immeubles." },
+    { "id": "camera-ip", "cat": "courants-faibles", "name": "Caméra de surveillance IP", "text": "Intérieur et extérieur, avec enregistreur." },
+    { "id": "detecteur-fumee", "cat": "courants-faibles", "name": "Détecteur de fumée", "text": "Pour les systèmes de détection incendie." },
+    { "id": "centrale-alarme", "cat": "courants-faibles", "name": "Centrale d'alarme", "text": "Anti-intrusion, avec détecteurs et sirène." },
+
+    { "id": "pince-denuder", "cat": "outillage", "name": "Pince à dénuder", "text": "Pour fils et câbles de différentes sections." },
+    { "id": "multimetre", "cat": "outillage", "name": "Multimètre", "text": "Mesures de tension, de courant et de continuité." },
+    { "id": "tournevis-isoles", "cat": "outillage", "name": "Tournevis isolés 1000 V", "text": "Jeux de tournevis pour les travaux électriques." },
+    { "id": "colliers", "cat": "outillage", "name": "Colliers de serrage", "text": "Plusieurs longueurs et couleurs." },
+    { "id": "chevilles", "cat": "outillage", "name": "Chevilles & fixations", "text": "Pour tous supports, de la plaque de plâtre au béton." },
+    { "id": "ruban-isolant", "cat": "outillage", "name": "Ruban isolant", "text": "Rubans PVC en plusieurs couleurs." }
+  ]
+}

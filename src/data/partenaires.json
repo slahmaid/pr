@@ -1,0 +1,5 @@
+{
+  "_note": "Ajoutez vos partenaires ici, puis lancez « node build.mjs ». name = nom affiché ; logo = chemin facultatif vers un fichier placé dans assets/img/partenaires/ (SVG ou PNG). Sans logo, le nom s'affiche en toutes lettres. Tant qu'une liste est vide, des emplacements vides s'affichent.",
+  "fabricants": [],
+  "clients": []
+}

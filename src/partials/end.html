@@ -1,0 +1,33 @@
+<!-- ====== WhatsApp shortcut ====== -->
+<a class="wa" href="https://wa.me/212723496854?text=Bonjour%20Prumysl%2C%20je%20souhaite%20un%20renseignement." target="_blank" rel="noopener" aria-label="Écrire à Prumysl sur WhatsApp"><svg class="i"><use href="#i-chat"/></svg><span>WhatsApp</span></a>
+
+<!-- ====== Quote list (filled from the product catalogue, kept on this device) ====== -->
+<button type="button" class="qfab" data-quote-open hidden><svg class="i"><use href="#i-list"/></svg><span>Mon devis</span><b data-quote-count>0</b></button>
+<div class="drawer" data-quote-drawer role="dialog" aria-modal="true" aria-labelledby="quote-title" aria-hidden="true">
+  <div class="drawer__bg" data-quote-close></div>
+  <div class="drawer__panel" data-theme="light">
+    <div class="drawer__head">
+      <div><p class="eyebrow muted">Demande de devis</p><h2 class="display h3" id="quote-title">Ma liste</h2></div>
+      <button type="button" class="round" data-quote-close aria-label="Fermer"><svg class="i"><use href="#i-close"/></svg></button>
+    </div>
+    <ul class="qlist" data-quote-list></ul>
+    <p class="qempty muted" data-quote-empty>Votre liste est vide. Ajoutez des articles depuis le <a class="ul" href="produits.html">catalogue</a>.</p>
+    <div class="drawer__foot">
+      <a class="btn btn--solid" data-quote-wa href="https://wa.me/212723496854" target="_blank" rel="noopener"><svg class="i"><use href="#i-chat"/></svg> Envoyer sur WhatsApp</a>
+      <a class="btn" href="contact.html#formulaire" data-quote-form>Compléter le formulaire</a>
+      <button type="button" class="drawer__clear" data-quote-clear>Vider la liste</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Cookie notice ====== -->
+<div class="cookie" data-cookie data-theme="light" hidden>
+  <p>Ce site enregistre votre choix concernant les cookies sur cet appareil. Branchez ici vos outils d'analyse si vous en utilisez. <a class="ul" href="mentions-legales.html#cookies">Gestion des cookies</a></p>
+  <div class="cookie__btns">
+    <button type="button" class="btn btn--sm" data-cookie-set="declined">Refuser</button>
+    <button type="button" class="btn btn--sm btn--solid" data-cookie-set="accepted">Accepter</button>
+  </div>
+</div>
+
+<script src="assets/js/tower.js" defer></script>
+<script src="assets/js/app.js" defer></script>

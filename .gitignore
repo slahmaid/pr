@@ -1,0 +1,13 @@
+# Build output: regenerate with `node build.mjs` (or let your host build it)
+dist/
+
+# Local tooling and editor files
+.claude/
+node_modules/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,9 @@
+# Keep text files with LF line endings on every computer
+* text=auto eol=lf
+
+# Binary files
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.woff2 binary

@@ -1,0 +1,80 @@
+<!--
+{
+  "title": "Catalogue matériel électrique, éclairage et ventilation | Prumysl",
+  "description": "Câbles, appareillage, protection, éclairage intérieur et extérieur, ventilation, courants faibles et outillage : composez votre liste et recevez un devis Prumysl.",
+  "nav": "produits",
+  "preloader": "quick"
+}
+-->
+<main id="main">
+
+<section class="phero" id="top" data-theme="dark" data-section>
+  <!-- @circuit -->
+  <div class="phero__inner">
+    <nav class="crumbs eyebrow" aria-label="Fil d'Ariane" data-hero-fade><a href="index.html">Accueil</a><span aria-hidden="true">/</span><span aria-current="page">Produits</span></nav>
+    <h1 class="display hero__title phero__title">
+      <span class="line"><span style="--i:0">Catalogue</span></span>
+      <span class="line"><span style="--i:1">matériel</span></span>
+    </h1>
+    <p class="phero__lead" data-hero-fade style="--i:1">Matériel électrique, éclairage et ventilation pour vos chantiers. Ajoutez des articles à votre liste, puis envoyez-la pour recevoir un devis&nbsp;: prix et disponibilités sur demande.</p>
+  </div>
+</section>
+
+<!-- ====== 01 Families ====== -->
+<section class="s tech" id="familles" data-theme="light" data-section>
+  <header class="shead" data-reveal="fade"><span class="shead__n">01</span><span class="shead__t">Familles de produits</span><span class="shead__of">/ 02</span></header>
+  <div class="split">
+    <h2 class="display h2" data-split>Huit familles, un seul fournisseur.</h2>
+    <p class="lead muted" data-reveal="fade">Choisissez une famille pour afficher les articles correspondants, ou parcourez tout le catalogue ci-dessous.</p>
+  </div>
+  <ul class="tiles tiles--cats" data-stagger><!-- @product-categories -->
+  </ul>
+</section>
+
+<!-- ====== 02 Catalogue ====== -->
+<!-- Les articles viennent de src/data/produits.json -->
+<section class="s catalogue" id="catalogue" data-theme="light" data-section data-filterable>
+  <header class="shead" data-reveal="fade"><span class="shead__n">02</span><span class="shead__t">Catalogue</span><span class="shead__of">/ 02</span></header>
+
+  <div class="cat-toolbar">
+    <label class="search">
+      <svg class="i"><use href="#i-search"/></svg>
+      <span class="sr-only">Rechercher un article</span>
+      <input type="search" placeholder="Rechercher un article…" data-search autocomplete="off">
+    </label>
+    <p class="cat-count eyebrow muted" data-count-out aria-live="polite"></p>
+  </div>
+  <div class="cat-filters" role="group" aria-label="Filtrer par famille">
+          <!-- @product-filters -->
+  </div>
+
+  <div class="pgrid"><!-- @products -->
+  </div>
+  <p class="empty muted" data-empty hidden>Aucun article ne correspond à votre recherche. <a class="ul" href="contact.html">Décrivez-nous votre besoin</a>, nous le trouverons pour vous.</p>
+
+  <aside class="cat-help" data-reveal="fade">
+    <div>
+      <p class="eyebrow muted">Vous ne trouvez pas votre article&nbsp;?</p>
+      <p class="lead">Ce catalogue présente une sélection. Envoyez-nous votre liste ou vos références, nous vous répondons avec un devis.</p>
+    </div>
+    <div class="cat-help__btns">
+      <a class="btn btn--solid" href="contact.html?besoin=Fourniture%20de%20mat%C3%A9riel">Envoyer ma liste <svg class="i"><use href="#i-arrow"/></svg></a>
+      <a class="btn" href="partenaires.html">Nos marques partenaires</a>
+    </div>
+  </aside>
+</section>
+
+<!-- ====== Solar cross-link ====== -->
+<section class="plan" id="solaire" data-theme="dark" data-section data-scrub>
+  <figure class="plan__bg media"><div class="media__in"><img src="assets/img/aerial-1.svg" alt="" data-parallax="0.12" loading="lazy"></div></figure>
+  <div class="plan__inner">
+    <p class="eyebrow" data-reveal="fade">Prumysl Solaire</p>
+    <h2 class="display h1" data-split>Un site sans courant&nbsp;?</h2>
+    <p class="plan__lead" data-reveal="fade">Caméras de surveillance 4G et projecteurs LED autonomes, alimentés par le soleil.</p>
+    <a class="btn btn--solid" href="prumysl-solaire.html" data-reveal="fade">Voir la gamme solaire <svg class="i"><use href="#i-arrow"/></svg></a>
+  </div>
+</section>
+
+<!-- @cta -->
+
+</main>

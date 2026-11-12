@@ -1,0 +1,103 @@
+<!--
+{
+  "title": "Contact et devis — Prumysl",
+  "description": "Un projet de travaux électriques, une demande de matériel ou un contrat de maintenance ? Contactez Prumysl par téléphone, WhatsApp ou via le formulaire.",
+  "nav": "contact",
+  "preloader": "quick"
+}
+-->
+<main id="main">
+
+<section class="phero" id="top" data-theme="dark" data-section>
+  <!-- @circuit -->
+  <div class="phero__inner">
+    <nav class="crumbs eyebrow" aria-label="Fil d'Ariane" data-hero-fade><a href="index.html">Accueil</a><span aria-hidden="true">/</span><span aria-current="page">Contact</span></nav>
+    <h1 class="display hero__title phero__title">
+      <span class="line"><span style="--i:0">Parlons de</span></span>
+      <span class="line"><span style="--i:1">votre projet</span></span>
+    </h1>
+    <p class="phero__lead" data-hero-fade style="--i:1">Des travaux, du matériel ou un contrat de maintenance&nbsp;: laissez vos coordonnées et nous vous rappelons rapidement.</p>
+  </div>
+</section>
+
+<!-- ====== Contact details + form ====== -->
+<!-- Adresse et horaires d'exemple : remplacez-les par les vôtres -->
+<section class="s contact" id="formulaire" data-theme="light" data-section>
+  <header class="shead" data-reveal="fade"><span class="shead__n">01</span><span class="shead__t">Nous contacter</span><span class="shead__of">/ 01</span></header>
+
+  <div class="contact__grid contact__grid--page">
+    <div>
+      <ul class="infos" data-stagger>
+        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-phone"/></svg><div><p class="eyebrow muted">Téléphone</p><a class="info__v" href="tel:+212723496854">07 23 49 68 54</a></div></li>
+        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-chat"/></svg><div><p class="eyebrow muted">WhatsApp</p><a class="info__v" href="https://wa.me/212723496854?text=Bonjour%20Prumysl%2C%20je%20souhaite%20un%20renseignement." target="_blank" rel="noopener">Écrire sur WhatsApp</a></div></li>
+        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-pin"/></svg><div><p class="eyebrow muted">Adresse</p><p class="info__v">Votre adresse<br>Ville, Maroc</p></div></li>
+        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-clock"/></svg><div><p class="eyebrow muted">Horaires</p><p class="info__v">Lundi – samedi<br>8&nbsp;h&nbsp;30 – 18&nbsp;h&nbsp;30</p></div></li>
+      </ul>
+      <figure class="media ar-169 contact__map" data-reveal="fade"><div class="media__in"><img src="assets/img/blank-169.svg" alt="Emplacement réservé : plan d'accès" loading="lazy"></div></figure>
+    </div>
+
+    <form class="form" data-form novalidate data-reveal="fade">
+      <div class="form__fields">
+        <div class="field">
+          <input id="c-name" name="name" type="text" autocomplete="name" required maxlength="80" placeholder=" ">
+          <label for="c-name">Votre nom</label>
+          <span class="field__err" aria-live="polite"></span>
+        </div>
+        <div class="field">
+          <input id="c-company" name="company" type="text" autocomplete="organization" maxlength="100" placeholder=" ">
+          <label for="c-company">Entreprise (facultatif)</label>
+          <span class="field__err" aria-live="polite"></span>
+        </div>
+        <div class="field">
+          <input id="c-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="20" placeholder=" ">
+          <label for="c-phone">Numéro de téléphone</label>
+          <span class="field__err" aria-live="polite"></span>
+        </div>
+        <div class="field">
+          <input id="c-email" name="email" type="email" autocomplete="email" maxlength="120" placeholder=" ">
+          <label for="c-email">E-mail (facultatif)</label>
+          <span class="field__err" aria-live="polite"></span>
+        </div>
+        <div class="field">
+          <input id="c-city" name="city" type="text" autocomplete="address-level2" required maxlength="60" placeholder=" ">
+          <label for="c-city">Ville</label>
+          <span class="field__err" aria-live="polite"></span>
+        </div>
+        <div class="field field--select">
+          <select id="c-need" name="need">
+            <option>Travaux courants forts</option>
+            <option>Courants faibles et sécurité</option>
+            <option>Éclairage</option>
+            <option>Ventilation</option>
+            <option>Fourniture de matériel</option>
+            <option>Maintenance ou dépannage</option>
+            <option>Prumysl Solaire</option>
+            <option>Autre demande</option>
+          </select>
+          <label for="c-need">Votre besoin</label>
+          <span class="field__err" aria-live="polite"></span>
+        </div>
+        <div class="field field--area">
+          <textarea id="c-message" name="message" rows="5" maxlength="2000" placeholder=" "></textarea>
+          <label for="c-message">Votre message ou votre liste de matériel</label>
+          <span class="field__err" aria-live="polite"></span>
+        </div>
+        <!-- Anti-robot trap: invisible to visitors, filled in only by automated spam -->
+        <div class="hp" aria-hidden="true"><label for="c-website">Ne pas remplir</label><input id="c-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+        <label class="check">
+          <input type="checkbox" name="consent" required>
+          <span class="check__box" aria-hidden="true"></span>
+          <span>J'accepte le traitement de mes données personnelles conformément à la <a href="mentions-legales.html#donnees">politique de confidentialité</a>.</span>
+        </label>
+        <button class="btn btn--solid" type="submit">Envoyer ma demande <svg class="i"><use href="#i-arrow"/></svg></button>
+        <p class="form__note muted">Formulaire de démonstration&nbsp;: rien n'est encore envoyé. Connectez-le à votre serveur ou à un service de formulaires avant la mise en ligne.</p>
+      </div>
+      <div class="form__done" role="status" aria-live="polite">
+        <h3 class="display h2">Merci.</h3>
+        <p class="lead muted">Votre demande a bien été enregistrée. Notre équipe vous rappelle rapidement.</p>
+      </div>
+    </form>
+  </div>
+</section>
+
+</main>
