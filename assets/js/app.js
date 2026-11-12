@@ -942,6 +942,36 @@
     });
   });
 
+  /* ----------------------------------------------------------- map embed */
+  // Google Maps sets its own cookies: it loads by itself only after the
+  // visitor accepted cookies, otherwise when they click "Afficher la carte".
+  const mapEmbeds = $$('[data-mapembed]');
+  const cookiesAccepted = () => {
+    try { return localStorage.getItem('cookie-choice') === 'accepted'; } catch (err) { return false; }
+  };
+  function loadMapEmbed(box) {
+    if (box.classList.contains('is-loaded')) return;
+    const frame = document.createElement('iframe');
+    frame.src = box.dataset.src;
+    frame.title = box.dataset.title || 'Carte';
+    frame.loading = 'lazy';
+    frame.referrerPolicy = 'no-referrer-when-downgrade';
+    frame.allowFullscreen = true;
+    box.appendChild(frame);
+    box.classList.add('is-loaded');
+  }
+  mapEmbeds.forEach((box) => {
+    const btn = $('[data-mapembed-load]', box);
+    if (btn) btn.addEventListener('click', () => loadMapEmbed(box));
+    if (!cookiesAccepted()) return;
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+      io.disconnect();
+      loadMapEmbed(box);
+    }, { rootMargin: '300px 0px' });
+    io.observe(box);
+  });
+
   /* ------------------------------------------------------- cookie notice */
   function initCookie() {
     const box = $('[data-cookie]');
@@ -953,6 +983,7 @@
     setTimeout(() => box.classList.add('is-on'), 2600);
     $$('[data-cookie-set]', box).forEach((btn) => btn.addEventListener('click', () => {
       try { localStorage.setItem('cookie-choice', btn.dataset.cookieSet); } catch (err) { /* storage unavailable */ }
+      if (btn.dataset.cookieSet === 'accepted') mapEmbeds.forEach(loadMapEmbed);
       box.classList.remove('is-on');
       setTimeout(() => { box.hidden = true; }, 900);
     }));

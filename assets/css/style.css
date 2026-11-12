@@ -872,8 +872,17 @@ a.chip { display: inline-flex; align-items: center; }
 .info__v { display: block; margin-top: 6px; font-size: 17px; font-weight: 500; line-height: 1.4; }
 a.info__v { transition: color .3s; }
 a.info__v:hover { color: var(--accent); }
-.contact__map { border: 1px solid var(--line); }
-.contact__map img { top: 0; height: 100%; }
+/* Google Maps embed with a click-to-load cover */
+.mapembed { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: #fff; border: 1px solid var(--line); }
+.mapembed__facade { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px; color: var(--ink); text-align: center; background-image: radial-gradient(circle at 1px 1px, rgba(10, 13, 38, .14) 1px, transparent 0); background-size: 22px 22px; }
+.mapembed__pin { width: 40px; height: 40px; color: var(--accent); stroke-width: 1.4; }
+.mapembed__addr { line-height: 1.5; }
+.mapembed__btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.mapembed__note { font-size: 12px; }
+.mapembed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.mapembed.is-loaded .mapembed__facade { display: none; }
+.mapembed__link { display: inline-block; margin-top: 12px; font-size: 14px; }
+@media (max-width: 559px) { .mapembed { aspect-ratio: 4 / 5; } }
 @media (max-width: 559px) { .infos { grid-template-columns: 1fr; } }
 .field textarea { display: block; width: 100%; min-height: 130px; padding: 30px 0 10px; background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; font: inherit; font-size: 17px; line-height: 1.5; color: inherit; resize: vertical; outline: none; transition: border-color .4s; }
 .field textarea:focus { border-color: var(--fg); }

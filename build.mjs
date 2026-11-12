@@ -50,7 +50,8 @@ const cspDirectives = {
   'img-src': ["'self'", 'data:'],
   'connect-src': ["'self'"],
   'object-src': ["'none'"],
-  'frame-src': ["'none'"],
+  // Google Maps embed on the contact page.
+  'frame-src': ['https://www.google.com', 'https://maps.google.com'],
   'worker-src': ["'none'"],
   'manifest-src': ["'self'"],
   'base-uri': ["'self'"],
@@ -129,6 +130,9 @@ function jsonLd() {
     areaServed: { '@type': 'Country', name: 'Maroc' },
     sameAs: [site.shop],
   };
+  if (site.address) data.address = { '@type': 'PostalAddress', ...site.address };
+  if (site.geo) data.geo = { '@type': 'GeoCoordinates', ...site.geo };
+  if (site.map) data.hasMap = site.map;
   if (siteUrl) {
     data.url = `${siteUrl}/`;
     data.logo = `${siteUrl}/assets/img/logo-prumysl.svg`;

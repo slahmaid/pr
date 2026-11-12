@@ -21,7 +21,7 @@
 </section>
 
 <!-- ====== Contact details + form ====== -->
-<!-- Adresse et horaires d'exemple : remplacez-les par les vôtres -->
+<!-- Horaires d'exemple : remplacez-les par les vôtres -->
 <section class="s contact" id="formulaire" data-theme="light" data-section>
   <header class="shead" data-reveal="fade"><span class="shead__n">01</span><span class="shead__t">Nous contacter</span><span class="shead__of">/ 01</span></header>
 
@@ -30,10 +30,24 @@
       <ul class="infos" data-stagger>
         <li class="info" data-reveal="fade"><svg class="i"><use href="#i-phone"/></svg><div><p class="eyebrow muted">Téléphone</p><a class="info__v" href="tel:+212723496854">07 23 49 68 54</a></div></li>
         <li class="info" data-reveal="fade"><svg class="i"><use href="#i-chat"/></svg><div><p class="eyebrow muted">WhatsApp</p><a class="info__v" href="https://wa.me/212723496854?text=Bonjour%20Prumysl%2C%20je%20souhaite%20un%20renseignement." target="_blank" rel="noopener">Écrire sur WhatsApp</a></div></li>
-        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-pin"/></svg><div><p class="eyebrow muted">Adresse</p><p class="info__v">Votre adresse<br>Ville, Maroc</p></div></li>
+        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-pin"/></svg><div><p class="eyebrow muted">Adresse</p><a class="info__v" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener">Av. Tizi Ousli<br>Casablanca 20580</a></div></li>
         <li class="info" data-reveal="fade"><svg class="i"><use href="#i-clock"/></svg><div><p class="eyebrow muted">Horaires</p><p class="info__v">Lundi – samedi<br>8&nbsp;h&nbsp;30 – 18&nbsp;h&nbsp;30</p></div></li>
       </ul>
-      <figure class="media ar-169 contact__map" data-reveal="fade"><div class="media__in"><img src="assets/img/blank-169.svg" alt="Emplacement réservé : plan d'accès" loading="lazy"></div></figure>
+      <!-- Google Maps: loads by itself once the visitor has accepted cookies, otherwise on click -->
+      <div class="mapembed" data-mapembed data-reveal="fade"
+        data-src="https://www.google.com/maps?q=PRUMYSL%20MAROC%2C%20Av.%20Tizi%20Ousli%2C%20Casablanca%2020580&amp;ll=33.6060684,-7.5336845&amp;z=17&amp;hl=fr&amp;output=embed"
+        data-title="Carte : Prumysl, Av. Tizi Ousli, Casablanca">
+        <div class="mapembed__facade">
+          <svg class="i mapembed__pin"><use href="#i-pin"/></svg>
+          <p class="mapembed__addr"><b>Prumysl Maroc</b><br>Av. Tizi Ousli, Casablanca 20580</p>
+          <div class="mapembed__btns">
+            <button type="button" class="btn btn--sm btn--solid" data-mapembed-load>Afficher la carte</button>
+            <a class="btn btn--sm" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener">Itinéraire <svg class="i"><use href="#i-external"/></svg></a>
+          </div>
+          <p class="mapembed__note muted">Carte fournie par Google Maps.</p>
+        </div>
+      </div>
+      <a class="ul mapembed__link" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener">Ouvrir dans Google Maps ↗</a>
     </div>
 
     <form class="form" data-form novalidate data-reveal="fade">

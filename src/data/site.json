@@ -4,5 +4,13 @@
   "name": "Prumysl",
   "description": "Travaux électriques en courants forts et courants faibles, fourniture de matériel électrique, d'éclairage et de ventilation au Maroc.",
   "telephone": "+212723496854",
+  "address": {
+    "streetAddress": "Av. Tizi Ousli",
+    "addressLocality": "Casablanca",
+    "postalCode": "20580",
+    "addressCountry": "MA"
+  },
+  "geo": { "latitude": 33.6060684, "longitude": -7.5336845 },
+  "map": "https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6",
   "shop": "https://prumysl.cc/"
 }
