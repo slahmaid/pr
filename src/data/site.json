@@ -1,6 +1,6 @@
 {
-  "_note": "Renseignez \"url\" avec l'adresse définitive du site (ex. https://www.prumysl.ma, sans / final) : le build générera alors sitemap.xml, les liens canoniques et les balises de partage.",
-  "url": "",
+  "_note": "\"url\" = adresse publique du site, sans / final. Actuellement GitHub Pages ; remplacez-la par votre nom de domaine (ex. https://www.prumysl.ma) quand vous en aurez un. Elle sert au sitemap, aux liens canoniques, aux balises de partage et à la page 404.",
+  "url": "https://slahmaid.github.io/pr",
   "name": "Prumysl",
   "description": "Travaux électriques en courants forts et courants faibles, fourniture de matériel électrique, d'éclairage et de ventilation au Maroc.",
   "telephone": "+212723496854",
