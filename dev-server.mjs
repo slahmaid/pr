@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { headersFor, parseHeaderBlocks } from './src/build/headers.mjs';
 
 await import('./build.mjs');
 
@@ -16,6 +17,7 @@ const types = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.xml': 'application/xml; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
@@ -27,20 +29,16 @@ const types = {
   '.woff2': 'font/woff2',
 };
 
-// Global headers from the "/*" block of _headers. HSTS and HTTPS upgrades are
-// left out locally because the preview runs on plain http://localhost.
-const headers = {};
-let inGlobal = false;
-for (const line of readFileSync(join(root, '_headers'), 'utf8').split(/\r?\n/)) {
-  if (!line.trim() || line.trim().startsWith('#')) continue;
-  if (!/^\s/.test(line)) { inGlobal = line.trim() === '/*'; continue; }
-  if (!inGlobal) continue;
-  const i = line.indexOf(':');
-  headers[line.slice(0, i).trim()] = line.slice(i + 1).trim();
-}
-delete headers['Strict-Transport-Security'];
-if (headers['Content-Security-Policy']) {
-  headers['Content-Security-Policy'] = headers['Content-Security-Policy'].replace(/;\s*upgrade-insecure-requests/, '');
+// Headers from dist/_headers, including the admin-only Content-Security-Policy.
+// HSTS and HTTPS upgrades are left out locally (plain http://localhost).
+const headerBlocks = parseHeaderBlocks(readFileSync(join(root, '_headers'), 'utf8'));
+function responseHeaders(pathname) {
+  const headers = headersFor(pathname, headerBlocks);
+  delete headers['Strict-Transport-Security'];
+  if (headers['Content-Security-Policy']) {
+    headers['Content-Security-Policy'] = headers['Content-Security-Policy'].replace(/;\s*upgrade-insecure-requests/g, '');
+  }
+  return headers;
 }
 
 createServer(async (req, res) => {
@@ -53,6 +51,7 @@ createServer(async (req, res) => {
   }
   if (pathname.endsWith('/')) pathname += 'index.html';
   const file = resolve(join(root, pathname));
+  const headers = responseHeaders(pathname);
   if (file !== root && !file.startsWith(root + sep)) {
     res.writeHead(403, headers).end('Forbidden');
     return;
@@ -63,7 +62,7 @@ createServer(async (req, res) => {
     res.end(data);
   } catch {
     const page = await readFile(join(root, '404.html')).catch(() => 'Not found');
-    res.writeHead(404, { ...headers, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.writeHead(404, { ...responseHeaders('/404.html'), 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(page);
   }
 }).listen(port, () => {

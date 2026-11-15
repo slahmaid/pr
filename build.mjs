@@ -14,6 +14,8 @@ import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readImageSize } from './src/build/image-size.mjs';
+import { productFigure } from './src/build/product-html.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const src = join(root, 'src');
@@ -42,24 +44,33 @@ const THREE_SRI = 'sha256-PmkKx9GAsKrfCJG+o57sZD4p4tPnXJmxholRhmX2m6Y=';
 const bootScript = partial('head').match(/<script>([\s\S]*?)<\/script>/)[1];
 const bootHash = createHash('sha256').update(bootScript).digest('base64');
 
-const cspDirectives = {
-  'default-src': ["'self'"],
-  'script-src': ["'self'", `'sha256-${bootHash}'`, 'https://cdn.jsdelivr.net'],
-  'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-  'font-src': ["'self'", 'https://fonts.gstatic.com'],
-  'img-src': ["'self'", 'data:'],
-  'connect-src': ["'self'"],
-  'object-src': ["'none'"],
-  // Google Maps embed on the contact page.
-  'frame-src': ['https://www.google.com', 'https://maps.google.com'],
-  'worker-src': ["'none'"],
-  'manifest-src': ["'self'"],
-  'base-uri': ["'self'"],
-  // Add your form service here when you connect the forms (e.g. https://formspree.io).
-  'form-action': ["'self'"],
-};
-const cspMeta = Object.entries(cspDirectives).map(([k, v]) => `${k} ${v.join(' ')}`).join('; ');
+function makeCsp({ connect = ["'self'"], img = ["'self'", 'data:'] } = {}) {
+  const directives = {
+    'default-src': ["'self'"],
+    'script-src': ["'self'", `'sha256-${bootHash}'`, 'https://cdn.jsdelivr.net'],
+    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+    'font-src': ["'self'", 'https://fonts.gstatic.com'],
+    'img-src': img,
+    'connect-src': connect,
+    'object-src': ["'none'"],
+    // Google Maps embed on the contact page.
+    'frame-src': ['https://www.google.com', 'https://maps.google.com'],
+    'worker-src': ["'none'"],
+    'manifest-src': ["'self'"],
+    'base-uri': ["'self'"],
+    // Add your form service here when you connect the forms (e.g. https://formspree.io).
+    'form-action': ["'self'"],
+  };
+  return Object.entries(directives).map(([k, v]) => `${k} ${v.join(' ')}`).join('; ');
+}
+const cspMeta = makeCsp();
 const cspHeader = `${cspMeta}; frame-ancestors 'none'; upgrade-insecure-requests`;
+// The admin page talks to GitHub from the browser. Other pages stay closed.
+const adminCspMeta = makeCsp({
+  connect: ["'self'", 'https://api.github.com'],
+  img: ["'self'", 'data:', 'blob:'],
+});
+const adminCspHeader = `${adminCspMeta}; frame-ancestors 'none'; upgrade-insecure-requests`;
 
 const securityHeaders = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
@@ -93,11 +104,31 @@ function renderCategories() {
       </li>`).join('');
 }
 
+function figureFor(product) {
+  if (!product.img) return productFigure(product);
+  const rel = String(product.img);
+  if (!/^assets\/img\/[a-zA-Z0-9/._-]+$/.test(rel) || rel.includes('..')) {
+    throw new Error(`Chemin d'image invalide pour « ${product.name} » (${product.id})`);
+  }
+  const abs = join(root, rel);
+  if (!existsSync(abs)) throw new Error(`Image introuvable pour « ${product.name} » : ${rel}`);
+  const dim = readImageSize(readFileSync(abs));
+  if (!dim) throw new Error(`Dimensions illisibles : ${rel}`);
+  return productFigure(product, dim);
+}
+
+const FAMILY_WORDS = [null, 'Une', 'Deux', 'Trois', 'Quatre', 'Cinq', 'Six', 'Sept', 'Huit', 'Neuf', 'Dix', 'Onze', 'Douze'];
+function familiesHeading(count) {
+  if (count <= 1) return 'Une famille, un seul fournisseur.';
+  const word = FAMILY_WORDS[count];
+  return `${word || count} familles, un seul fournisseur.`;
+}
+
 function renderProducts() {
   const label = Object.fromEntries(catalogue.categories.map((c) => [c.id, c.label]));
   return catalogue.products.map((p) => `
-        <article class="pitem" data-item data-cat="${p.cat}" data-text="${esc(norm(`${p.name} ${p.text} ${label[p.cat]}`))}" data-reveal="fade">
-          <figure class="media ar-11"><div class="media__in"><img src="assets/img/blank-11.svg" alt="" loading="lazy" draggable="false"></div></figure>
+        <article class="pitem" data-item data-cat="${p.cat}" data-text="${esc(norm(`${p.name} ${p.text} ${label[p.cat] || ''}`))}" data-reveal="fade">
+          ${figureFor(p)}
           <div class="pitem__body">
             <span class="eyebrow muted">${esc(label[p.cat])}</span>
             <h3 class="pitem__name">${esc(p.name)}</h3>
@@ -163,10 +194,27 @@ const towerJs = readFileSync(join(root, 'assets/js/tower.js'), 'utf8');
 out('assets/css/style.css', css);
 out('assets/js/app.js', appJs);
 out('assets/js/tower.js', towerJs);
+const adminCss = minifyCss(readFileSync(join(root, 'assets/css/admin.css'), 'utf8'));
+const catalogueJs = readFileSync(join(root, 'assets/js/catalogue.js'), 'utf8');
+let adminJs = readFileSync(join(root, 'assets/js/admin.js'), 'utf8');
+if (!adminJs.includes('const SEED = null;') || !adminJs.includes('__SITE_URL__') || !adminJs.includes("from './catalogue.js'")) {
+  throw new Error('admin.js: marqueurs de build introuvables');
+}
+const catalogueHash = shortHash(catalogueJs);
+adminJs = adminJs
+  .replace('const SEED = null;', `const SEED = ${JSON.stringify(catalogue)};`)
+  .replaceAll('__SITE_URL__', siteUrl)
+  .replaceAll("from './catalogue.js'", `from './catalogue.js?v=${catalogueHash}'`);
+out('assets/css/admin.css', adminCss);
+out('assets/js/catalogue.js', catalogueJs);
+out('assets/js/admin.js', adminJs);
 const versions = {
   'assets/css/style.css': shortHash(css),
   'assets/js/app.js': shortHash(appJs),
   'assets/js/tower.js': shortHash(towerJs),
+  'assets/css/admin.css': shortHash(adminCss),
+  'assets/js/admin.js': shortHash(adminJs),
+  'assets/js/catalogue.js': catalogueHash,
 };
 
 const pages = readdirSync(join(src, 'pages')).filter((f) => f.endsWith('.html'));
@@ -186,6 +234,7 @@ for (const file of pages) {
     .replace('<!-- @product-filters -->', renderFilters())
     .replace('<!-- @product-categories -->', renderCategories())
     .replace('<!-- @products -->', renderProducts())
+    .replace('<!-- @families-heading -->', familiesHeading(catalogue.categories.length))
     .replace('<!-- @partners-fabricants -->', renderPartners(partners.fabricants, 'Logo partenaire', 12))
     .replace('<!-- @partners-clients -->', renderPartners(partners.clients, 'Logo client', 8))
     .trim();
@@ -215,15 +264,30 @@ for (const file of pages) {
 
   const head = partial('head')
     .replace('{{base}}', meta.base ? `<base href="${basePath}">\n` : '')
-    .replace('{{csp}}', cspMeta)
+    .replace('{{csp}}', meta.admin ? adminCspMeta : cspMeta)
     .replace('{{title}}', esc(meta.title))
     .replace('{{description}}', esc(meta.description))
     .replace('{{meta}}', metaTags.join('\n'))
     .replace('{{preload}}', preload)
+    .replace('{{extra}}', meta.admin ? '<link rel="stylesheet" href="assets/css/admin.css">' : '')
     .replace('{{jsonld}}', name === 'index' ? jsonLd() : '');
 
-  let html = `<!doctype html>
-<!-- Généré par build.mjs à partir de src/pages/${file} : modifiez la source puis relancez « node build.mjs ». -->
+  const shell = `<!-- Généré par build.mjs à partir de src/pages/${file} : modifiez la source puis relancez « node build.mjs ». -->`;
+  let html = meta.bare
+    ? `<!doctype html>
+${shell}
+<html lang="fr" class="no-js">
+<head>
+${head}
+</head>
+<body data-theme="light" data-page="${name}">
+${partial('sprite')}
+${body}
+</body>
+</html>
+`
+    : `<!doctype html>
+${shell}
 <html lang="fr" class="no-js">
 <head>
 ${head}
@@ -274,7 +338,11 @@ for (const ref of assetRefs) {
 
 /* ------------------------------------------------------------ crawlers */
 const indexable = built.filter((p) => !p.meta.noindex);
-out('robots.txt', `User-agent: *\nAllow: /\nDisallow: ${basePath}404.html\n${siteUrl ? `\nSitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
+const hidden = built
+  .filter((p) => p.meta.noindex)
+  .sort((a, b) => a.file.localeCompare(b.file))
+  .map((p) => `Disallow: ${basePath}${p.file}`);
+out('robots.txt', `User-agent: *\nAllow: /\n${hidden.join('\n')}\n${siteUrl ? `\nSitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
 // GitHub Pages: publish files as they are (no Jekyll processing).
 out('.nojekyll', '');
 if (siteUrl) {
@@ -305,6 +373,11 @@ ${Object.entries(securityHeaders).map(([k, v]) => `  ${k}: ${v}`).join('\n')}
 
 /assets/img/*
   Cache-Control: public, max-age=604800
+
+# Admin only: GitHub API and local image previews. Public pages keep connect-src 'self'.
+/admin.html
+  Content-Security-Policy: ${adminCspHeader}
+  X-Robots-Tag: noindex
 `);
 
 // Apache (shared hosting / cPanel)
@@ -347,6 +420,13 @@ ${Object.entries(securityHeaders).map(([k, v]) => `  Header always set ${k} "${v
   <FilesMatch "\\.(svg|webp|jpg|jpeg|png|woff2)$">
     Header set Cache-Control "public, max-age=604800"
   </FilesMatch>
+
+  # Catalogue admin: allow api.github.com. The public pages keep the stricter policy above.
+  <Files "admin.html">
+    Header always unset Content-Security-Policy
+    Header always set Content-Security-Policy "${adminCspHeader}"
+    Header always set X-Robots-Tag "noindex"
+  </Files>
 </IfModule>
 
 <IfModule mod_deflate.c>
