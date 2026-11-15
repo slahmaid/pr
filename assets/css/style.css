@@ -2,11 +2,11 @@
    Brand tokens — change these to restyle the whole site
    ========================================================================== */
 :root {
-  --ink: #0a0d26;        /* dark background (deep Prumysl blue) */
-  --ink-2: #141943;
+  --ink: #1a2160;        /* dark background (Prumysl blue, lightened) */
+  --ink-2: #262e78;
   --paper: #f4f5fb;      /* light background */
   --paper-2: #e3e6f3;
-  --accent: #e63946;     /* Prumysl red */
+  --accent: #22b573;     /* Prumysl green */
   --brand: #202895;      /* Prumysl blue (logo) */
   --wa: #28a745;         /* WhatsApp button */
 
@@ -218,11 +218,11 @@ input { font: inherit; color: inherit; }
   position: relative; overflow: hidden;
   display: flex; flex-direction: column; justify-content: flex-end;
   min-height: 100vh; min-height: 100svh;
-  background: radial-gradient(75% 75% at 72% 40%, #1d2482 0%, var(--ink) 70%);
+  background: radial-gradient(75% 75% at 72% 40%, #3540b8 0%, var(--ink) 70%);
 }
 .hero__canvas { position: absolute; inset: 0; }
 .hero__canvas canvas { width: 100%; height: 100%; }
-.hero__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(10, 13, 38, .45) 0%, rgba(10, 13, 38, 0) 28%, rgba(10, 13, 38, .2) 55%, rgba(10, 13, 38, .88) 100%); }
+.hero__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(26, 33, 96, .35) 0%, rgba(26, 33, 96, 0) 28%, rgba(26, 33, 96, .12) 55%, rgba(26, 33, 96, .78) 100%); }
 .hero__inner { position: relative; z-index: 2; padding: 120px var(--gutter) clamp(22px, 4vh, 44px); will-change: transform; }
 .hero__eyebrow { display: flex; align-items: center; gap: 12px; margin-bottom: clamp(16px, 2.6vh, 32px); }
 .hero__eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
@@ -246,11 +246,18 @@ input { font: inherit; color: inherit; }
 @media (min-width: 900px) {
   .hero__foot { grid-template-columns: minmax(0, 52ch) 1fr auto; gap: clamp(32px, 5vw, 96px); }
   .scrollcue { display: inline-flex; }
+  /* Desktop: the whole hero fits in the first screen, whatever its height */
+  .hero { height: 100vh; height: 100svh; min-height: 560px; }
+  .hero__inner { padding-top: clamp(84px, 13vh, 120px); padding-bottom: clamp(18px, 3.5vh, 44px); }
+  .hero__eyebrow { margin-bottom: clamp(10px, 2vh, 32px); }
+  .hero__title { font-size: max(38px, min(8.2vw, calc((100svh - 300px) / 3.1), 148px)); }
+  .hero__foot { margin-top: clamp(14px, 3vh, 52px); padding-top: clamp(14px, 2.2vh, 22px); }
+  .hero__intro { gap: clamp(12px, 2vh, 20px); }
 }
 .js [data-hero-fade] { opacity: 0; transform: translateY(22px); transition: opacity 1.2s var(--ease), transform 1.2s var(--ease); transition-delay: calc(var(--i, 0) * 110ms + 650ms); }
 .is-ready [data-hero-fade] { opacity: 1; transform: none; }
 @media (max-width: 899px) {
-  .hero__shade { background: linear-gradient(180deg, rgba(10, 13, 38, .4) 0%, rgba(10, 13, 38, 0) 22%, rgba(10, 13, 38, .72) 50%, rgba(10, 13, 38, .97) 100%); }
+  .hero__shade { background: linear-gradient(180deg, rgba(26, 33, 96, .35) 0%, rgba(26, 33, 96, 0) 22%, rgba(26, 33, 96, .7) 50%, rgba(26, 33, 96, .95) 100%); }
 }
 
 /* ==========================================================================
@@ -729,7 +736,7 @@ main { position: relative; z-index: 1; }
 .is-leaving .veil i { transform: none; }
 
 /* inner-page hero */
-.phero { position: relative; overflow: hidden; display: flex; align-items: flex-end; min-height: min(82vh, 820px); padding: 130px var(--gutter) clamp(44px, 6vw, 96px); background: radial-gradient(70% 90% at 80% 25%, #1d2482 0%, var(--ink) 70%); }
+.phero { position: relative; overflow: hidden; display: flex; align-items: flex-end; min-height: min(82vh, 820px); padding: 130px var(--gutter) clamp(44px, 6vw, 96px); background: radial-gradient(70% 90% at 80% 25%, #3540b8 0%, var(--ink) 70%); }
 .phero--short { min-height: min(58vh, 540px); }
 .phero__inner { position: relative; z-index: 2; display: grid; gap: clamp(18px, 2.4vw, 32px); justify-items: start; width: 100%; }
 .phero__title { font-size: clamp(32px, 7.6vw, 132px); }
@@ -757,7 +764,7 @@ a.chip { display: inline-flex; align-items: center; }
 @keyframes circuit-flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -1770; } }
 
 /* call-to-action band */
-.ctaband { position: relative; overflow: hidden; padding: clamp(96px, 12vw, 200px) var(--gutter); background: radial-gradient(60% 80% at 50% 50%, #1d2482 0%, var(--ink) 72%); text-align: center; }
+.ctaband { position: relative; overflow: hidden; padding: clamp(96px, 12vw, 200px) var(--gutter); background: radial-gradient(60% 80% at 50% 50%, #3540b8 0%, var(--ink) 72%); text-align: center; }
 .ctaband__in { position: relative; z-index: 2; display: grid; justify-items: center; gap: clamp(18px, 2.4vw, 32px); }
 .ctaband__lead { max-width: 46ch; font-size: clamp(16px, 1.3vw, 20px); }
 .ctaband__btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
@@ -938,3 +945,7 @@ a.info__v:hover { color: var(--accent); }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; transition-delay: 0ms !important; }
 }
+
+/* Homepage: Réalisations and Méthode are both light, so keep them close */
+.lobby:has(+ .amen) { padding-bottom: clamp(32px, 3.5vw, 64px); }
+.lobby + .amen { padding-top: clamp(24px, 3vw, 56px); }

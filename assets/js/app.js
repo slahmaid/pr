@@ -1,7 +1,7 @@
 /*
  * Site interactions: preloader, inertial smooth scroll, scroll reveals,
  * parallax, pinned horizontal gallery, sliders, carousel, map, modals, menu,
- * magnetic buttons, image preview on hover, form, cookie notice.
+ * image preview on hover, form, cookie notice.
  * No build step and no dependencies; three.js (3D only) loads from a CDN.
  */
 (function () {
@@ -990,42 +990,6 @@
   }
 
   /* ------------------------------------------------------ pointer extras */
-  // Buttons lean towards the pointer.
-  function initMagnetic() {
-    if (!finePointer || reduce) return;
-    $$('.btn, .round, .burger').forEach((el) => {
-      const strength = el.classList.contains('btn') ? 0.22 : 0.35;
-      let raf = 0;
-      let x = 0;
-      let y = 0;
-      let tx = 0;
-      let ty = 0;
-      let over = false;
-      const loop = () => {
-        x = lerp(x, tx, 0.16);
-        y = lerp(y, ty, 0.16);
-        if (!over && Math.abs(x) < 0.05 && Math.abs(y) < 0.05) {
-          el.style.translate = '';
-          raf = 0;
-          return;
-        }
-        el.style.translate = x.toFixed(2) + 'px ' + y.toFixed(2) + 'px';
-        raf = requestAnimationFrame(loop);
-      };
-      el.addEventListener('pointermove', (e) => {
-        const r = el.getBoundingClientRect();
-        tx = (e.clientX - (r.left + r.width / 2)) * strength;
-        ty = (e.clientY - (r.top + r.height / 2)) * strength;
-        over = true;
-        if (!raf) raf = requestAnimationFrame(loop);
-      });
-      el.addEventListener('pointerleave', () => {
-        tx = ty = 0;
-        over = false;
-      });
-    });
-  }
-
   // Team rows: an image follows the pointer while a row is hovered.
   function initRowPreview() {
     if (!finePointer || reduce) return;
@@ -1113,7 +1077,6 @@
       });
       observeReveals();
       initCookie();
-      initMagnetic();
       initRowPreview();
       if (hashCat) jumpToCat(hashCat);
     }, reduce ? 0 : 650);

@@ -22,7 +22,7 @@
   // metal and glass have something to reflect. No image files needed.
   function makeEnvironment(THREE, renderer) {
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1224);
+    scene.background = new THREE.Color(0x1a2160);
     const panel = (hex, power, w, h, x, y, z) => {
       const material = new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(power), side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), material);
@@ -33,7 +33,7 @@
     // Prumysl palette: white key light, brand blues, a touch of brand red.
     panel(0xffffff, 10, 6, 14, 9, 3, 5);
     panel(0x6d78ff, 7, 14, 5, -10, 2, -2);
-    panel(0xff6b76, 6, 3, 10, -5, -2, 8);
+    panel(0x5fe0a0, 6, 3, 10, -5, -2, 8);
     panel(0xffffff, 6, 16, 4, 0, 11, 0);
     panel(0x2a35b8, 4, 22, 8, 0, -9, -6);
     panel(0xdfe4ff, 5, 4, 12, 2, 1, -11);
@@ -57,7 +57,7 @@
     const g = c.getContext('2d');
     const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
     grad.addColorStop(0, 'rgba(140, 150, 255, 0.6)');
-    grad.addColorStop(0.3, 'rgba(230, 57, 70, 0.18)');
+    grad.addColorStop(0.3, 'rgba(34, 181, 115, 0.18)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     g.fillStyle = grad;
     g.fillRect(0, 0, 256, 256);
@@ -111,7 +111,7 @@
       plateB = new THREE.MeshStandardMaterial({ color: 0xd2d7f2, metalness: 0.9, roughness: 0.16, envMapIntensity: 1.5 });
       glass = new THREE.MeshPhysicalMaterial({ color: 0x080b2e, metalness: 0.9, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 2.3 });
       warmWin = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xc9d2ff).multiplyScalar(2.4) });
-      coolWin = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff4a57).multiplyScalar(1.9) });
+      coolWin = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x2fd585).multiplyScalar(1.9) });
 
       const key = new THREE.DirectionalLight(0xffffff, 3.2);
       key.position.set(6, 8, 7);
@@ -147,7 +147,7 @@
     }
 
     const lineMat = new THREE.LineBasicMaterial({ color: wire ? 0x202895 : 0xdfe4ff, transparent: true, opacity: wire ? 0.72 : 0.28 });
-    const accentMat = new THREE.LineBasicMaterial({ color: 0xe63946 });
+    const accentMat = new THREE.LineBasicMaterial({ color: 0x22b573 });
     const faceMat = wire ? new THREE.MeshBasicMaterial({ color: 0x202895, transparent: true, opacity: 0.045, depthWrite: false }) : null;
 
     const slabs = [];
