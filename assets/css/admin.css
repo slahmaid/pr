@@ -22,7 +22,7 @@
   justify-items: center;
   gap: 28px;
   padding: 32px 20px 64px;
-  background: radial-gradient(75% 75% at 72% 30%, #1d2482 0%, var(--ink) 68%);
+  background: radial-gradient(75% 75% at 72% 30%, var(--ink-2) 0%, var(--ink) 68%);
   color: var(--paper);
 }
 .admin-login .logo__svg { width: 120px; }
@@ -84,9 +84,9 @@
 .admin-field select:focus { border-bottom-color: var(--fg); }
 .admin-field input[aria-invalid="true"],
 .admin-field textarea[aria-invalid="true"],
-.admin-field select[aria-invalid="true"] { border-bottom-color: var(--accent); }
+.admin-field select[aria-invalid="true"] { border-bottom-color: #9f2d2d; }
 .admin-token { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
-.admin-err { min-height: 1.2em; margin: 0; font-size: 13px; color: var(--accent); }
+.admin-err { min-height: 1.2em; margin: 0; font-size: 13px; color: #9f2d2d; }
 .admin-err:empty { display: none; }
 
 .admin-app { min-height: 100vh; min-height: 100svh; background: var(--paper); color: var(--ink); }
@@ -110,7 +110,7 @@
   font-weight: 600;
   letter-spacing: .12em;
   text-transform: uppercase;
-  color: #ffd0d4;
+  color: var(--accent);
 }
 .admin-main { padding: 28px var(--gutter) 80px; max-width: 1180px; }
 .admin-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 22px; }
@@ -126,7 +126,7 @@
   scroll-margin-top: 96px;
 }
 .admin-status[hidden] { display: none; }
-.admin-status[data-kind="ok"] { background: #e7f6ee; border-color: #b7e4c7; }
+.admin-status[data-kind="ok"] { background: color-mix(in srgb, var(--accent) 16%, white); border-color: color-mix(in srgb, var(--accent) 42%, white); }
 .admin-status[data-kind="err"] { background: #fdecee; border-color: #f5c2c7; }
 .admin-status[data-kind="info"] { background: var(--bg-2); }
 .admin-status a { text-decoration: underline; text-underline-offset: 3px; }
@@ -200,7 +200,7 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.admin-textbtn--danger { color: var(--accent); }
+.admin-textbtn--danger { color: #9f2d2d; }
 .admin-empty { padding: 18px 0 8px; font-size: 14px; }
 .admin-catrow {
   display: grid;

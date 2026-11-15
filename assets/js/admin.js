@@ -789,11 +789,15 @@ async function demoFile() {
   canvas.width = 1600;
   canvas.height = 1000;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#0a0d26';
+  const tokens = getComputedStyle(document.documentElement);
+  const ink = tokens.getPropertyValue('--ink').trim() || '#1a2160';
+  const accent = tokens.getPropertyValue('--accent').trim() || '#22b573';
+  const paper = tokens.getPropertyValue('--paper').trim() || '#f4f5fb';
+  ctx.fillStyle = ink;
   ctx.fillRect(0, 0, 1600, 1000);
-  ctx.fillStyle = '#e63946';
+  ctx.fillStyle = accent;
   ctx.fillRect(120, 160, 1360, 680);
-  ctx.fillStyle = '#f4f5fb';
+  ctx.fillStyle = paper;
   ctx.font = '600 72px sans-serif';
   ctx.fillText('PRUMYSL', 180, 520);
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
