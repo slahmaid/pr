@@ -1,16 +1,26 @@
 import {
   ICONS,
+  PAGE_SIZE,
+  clampPage,
   cloneDoc,
   commitMessage,
+  contentsAreComplete,
   deleteCategory,
   deleteProduct,
-  grouped,
+  familyCounts,
+  familyPaths,
+  filterProducts,
+  frCount,
   imagePath,
   isDirty,
+  isProtectedProduct,
   moveCategory,
-  norm,
+  pageItems,
   planImages,
+  protectionError,
   serialize,
+  slugify,
+  uniqueId,
   upsertProduct,
   validateCategory,
   validateProduct,
@@ -25,7 +35,10 @@ const SITE = {
   workflow: 'Deploy to GitHub Pages',
 };
 
+const CATALOGUE_URL = '__CATALOGUE_URL__';
+// Left null on purpose: build.mjs must not inline the catalogue into this file.
 const SEED = null;
+if (SEED) throw new Error('Le catalogue ne doit pas être intégré dans cette page.');
 const TOKEN_KEY = 'prumysl.admin.token';
 const MOCK_KEY = 'prumysl.admin.mockToken';
 
@@ -42,6 +55,7 @@ const pending = new Map();
 const remoteUrls = new Map();
 let dragId = '';
 let editorSession = null;
+const listState = { page: 1 };
 
 const ui = {};
 
@@ -203,10 +217,61 @@ function createMock(scenario, seed) {
   };
 }
 
-const mockRequest = mockMode ? createMock(mockMode, SEED || { categories: [], products: [] }) : null;
+let mockRequest = null;
+let mockReady = null;
+
+async function prepareMock() {
+  if (!mockMode || mockRequest) return;
+  if (!mockReady) {
+    mockReady = (async () => {
+      let response;
+      try {
+        response = await fetch(CATALOGUE_URL, { cache: 'no-store', headers: { Accept: 'application/json' } });
+      } catch {
+        throw new Error('Catalogue local impossible à lire. Relancez node build.mjs.');
+      }
+      if (!response.ok) throw new Error('Catalogue local introuvable. Relancez node build.mjs.');
+      const doc = await response.json();
+      if (!doc || !Array.isArray(doc.categories) || !Array.isArray(doc.products)) {
+        throw new Error('Le catalogue local est incomplet.');
+      }
+      mockRequest = createMock(mockMode, doc);
+    })();
+  }
+  await mockReady;
+}
+
+function oversizedCatalogue(err) {
+  return err?.status === 403 && /1\s*MB|too large|too_large|Blob/i.test(String(err.message || ''));
+}
+
+async function readBlob(sha) {
+  const blob = await gh('GET', `/repos/${SITE.owner}/${SITE.repo}/git/blobs/${sha}`);
+  return { sha, encoding: blob.encoding || 'base64', content: blob.content, size: blob.size };
+}
+
+async function fetchCatalogueFile() {
+  const contentsPath = `/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.dataPath}?ref=${SITE.branch}`;
+  try {
+    const meta = await gh('GET', contentsPath);
+    if (contentsAreComplete(meta)) return meta;
+    if (meta?.sha) return readBlob(meta.sha);
+  } catch (err) {
+    if (!oversizedCatalogue(err)) throw err;
+  }
+  const ref = await gh('GET', `/repos/${SITE.owner}/${SITE.repo}/git/ref/heads/${SITE.branch}`);
+  const commit = await gh('GET', `/repos/${SITE.owner}/${SITE.repo}/git/commits/${ref.object.sha}`);
+  const tree = await gh('GET', `/repos/${SITE.owner}/${SITE.repo}/git/trees/${commit.tree.sha}?recursive=1`);
+  const entry = (tree.tree || []).find((item) => item.path === SITE.dataPath);
+  if (!entry?.sha) throw new Error('produits.json est introuvable sur main.');
+  return readBlob(entry.sha);
+}
 
 async function gh(method, path, body) {
-  if (mockRequest) return mockRequest(method, path, body);
+  if (mockMode) {
+    await prepareMock();
+    return mockRequest(method, path, body);
+  }
   let response;
   try {
     response = await fetch(`https://api.github.com${path}`, {
@@ -245,7 +310,10 @@ async function gh(method, path, body) {
 function parseDoc(file) {
   let doc;
   try {
-    doc = JSON.parse(new TextDecoder().decode(decodeBase64(file.content)));
+    const text = file.encoding === 'utf-8' || file.encoding === 'utf8'
+      ? String(file.content)
+      : new TextDecoder().decode(decodeBase64(file.content));
+    doc = JSON.parse(text);
   } catch {
     throw new Error('Le fichier produits.json n’est pas un JSON valide.');
   }
@@ -325,7 +393,7 @@ function savedToken() {
 }
 
 async function loadCatalogue() {
-  const file = await gh('GET', `/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.dataPath}?ref=${SITE.branch}`);
+  const file = await fetchCatalogueFile();
   const doc = parseDoc(file);
   clearAllPending();
   baseline = doc;
@@ -334,7 +402,7 @@ async function loadCatalogue() {
 }
 
 async function reloadFromServer(file) {
-  const data = file || await gh('GET', `/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.dataPath}?ref=${SITE.branch}`);
+  const data = file || await fetchCatalogueFile();
   const doc = parseDoc(data);
   clearAllPending();
   baseline = doc;
@@ -433,6 +501,11 @@ async function publish() {
     if (!dirty()) setStatus('info', 'Aucune modification à publier.');
     return;
   }
+  const blocked = protectionError(baseline, draft);
+  if (blocked) {
+    setStatus('err', blocked);
+    return;
+  }
   setBusy(true);
   setStatus('info', 'Publication en cours…');
   try {
@@ -441,7 +514,7 @@ async function publish() {
     const jsonText = serialize(draft);
     const [ref, file] = await Promise.all([
       gh('GET', `/repos/${SITE.owner}/${SITE.repo}/git/ref/heads/${SITE.branch}`),
-      gh('GET', `/repos/${SITE.owner}/${SITE.repo}/contents/${SITE.dataPath}?ref=${SITE.branch}`),
+      fetchCatalogueFile(),
     ]);
     if (file.sha !== knownSha) {
       await reloadFromServer(file);
@@ -512,49 +585,129 @@ async function publish() {
   }
 }
 
-function catLabel(id) {
-  return draft.categories.find((c) => c.id === id)?.label || 'Sans famille';
-}
-
 function positionOf(id) {
   const product = draft.products.find((p) => p.id === id);
   if (!product) return 1;
   return draft.products.filter((p) => p.cat === product.cat).findIndex((p) => p.id === id) + 1;
 }
 
-function renderList() {
-  const query = ui.search ? ui.search.value : '';
-  const needle = norm(query.trim());
-  ui.list.replaceChildren();
-  let shown = 0;
-  for (const group of grouped(draft)) {
-    const products = group.products.filter((p) => {
-      if (!needle) return true;
-      return norm(`${p.name} ${p.text} ${p.id} ${group.category.label}`).includes(needle);
-    });
-    if (needle && !products.length) continue;
-    shown += products.length;
-    const section = document.createElement('section');
-    section.className = 'admin-group';
-    if (group.category.id) section.dataset.dropCat = group.category.id;
-    const title = document.createElement('h2');
-    title.className = 'display';
-    title.innerHTML = `<svg class="i" aria-hidden="true"><use href="#${esc(group.category.icon || 'i-bolt')}"/></svg>${esc(group.category.label)}<small>${products.length}</small>`;
-    section.append(title);
-    const rows = document.createElement('div');
-    rows.className = 'admin-rows';
-    if (!products.length) {
-      const empty = document.createElement('p');
-      empty.className = 'admin-empty muted';
-      empty.textContent = 'Aucun article dans cette famille. Déposez-en un ici.';
-      rows.append(empty);
+function listQuery() {
+  return ui.search ? ui.search.value : '';
+}
+
+function listFamily() {
+  return ui.family ? ui.family.value : '';
+}
+
+function visibleProducts() {
+  return filterProducts(draft, { family: listFamily(), query: listQuery() });
+}
+
+function revealProduct(id) {
+  const index = visibleProducts().findIndex((p) => p.id === id);
+  if (index >= 0) listState.page = Math.floor(index / PAGE_SIZE) + 1;
+}
+
+function renderFamilySelect() {
+  if (!ui.family) return;
+  const counts = familyCounts(draft);
+  const signature = `${draft.products.length}|${draft.categories.map((c) => `${c.id}:${c.label}:${counts.get(c.id) || 0}`).join('|')}`;
+  const current = listFamily();
+  if (ui.family.dataset.sig !== signature) {
+    const options = [`<option value="">Toutes les familles (${frCount(draft.products.length)})</option>`];
+    for (const category of draft.categories) {
+      options.push(`<option value="${esc(category.id)}">${esc(category.label)} (${frCount(counts.get(category.id) || 0)})</option>`);
     }
-    const reorderLocked = Boolean(needle);
-    products.forEach((product, index) => {
-      const row = document.createElement('article');
-      row.className = 'admin-row';
-      row.dataset.id = product.id;
-      row.innerHTML = `
+    ui.family.innerHTML = options.join('');
+    ui.family.dataset.sig = signature;
+  }
+  const known = !current || draft.categories.some((c) => c.id === current);
+  ui.family.value = known ? current : '';
+}
+
+function renderPager(total) {
+  if (!ui.pager) return;
+  if (!total) {
+    ui.pager.hidden = true;
+    ui.pager.replaceChildren();
+    return;
+  }
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  listState.page = clampPage(listState.page, total, PAGE_SIZE);
+  const page = listState.page;
+  const statusText = `Page ${frCount(page)} sur ${frCount(pages)} · ${frCount(total)} produit${total > 1 ? 's' : ''}`;
+  const navBtn = (kind, text) => {
+    const disabled = (kind === 'first' || kind === 'prev') ? page <= 1 : page >= pages;
+    const target = kind === 'first' ? 1 : kind === 'last' ? pages : kind === 'prev' ? page - 1 : page + 1;
+    const symbol = kind === 'first' ? '<span aria-hidden="true">«</span>'
+      : kind === 'last' ? '<span aria-hidden="true">»</span>'
+      : kind === 'prev'
+        ? '<svg class="i" aria-hidden="true"><use href="#i-arrow-left"/></svg>'
+        : '<svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg>';
+    const aria = disabled ? ' aria-disabled="true" disabled' : '';
+    return `<button type="button" class="pager__btn" data-page="${target}" aria-label="${esc(text)}"${aria}>${symbol}<span class="pager__label">${esc(text)}</span></button>`;
+  };
+  const numbers = pages === 1 ? '' : pageItems(page, pages).map((item) => {
+    if (item === '…') return '<span class="pager__gap" aria-hidden="true">…</span>';
+    const current = item === page ? ' aria-current="page"' : '';
+    return `<button type="button" class="pager__num" data-page="${item}" aria-label="Page ${item}"${current}>${frCount(item)}</button>`;
+  }).join('');
+  const nav = pages === 1 ? '' : `<div class="pager__nav">
+      ${navBtn('first', 'Première page')}
+      ${navBtn('prev', 'Page précédente')}
+      ${numbers}
+      ${navBtn('next', 'Page suivante')}
+      ${navBtn('last', 'Dernière page')}
+    </div>`;
+  ui.pager.innerHTML = `<p class="pager__status eyebrow muted" data-pager-status aria-live="polite">${statusText}</p>${nav}`;
+  ui.pager.hidden = false;
+}
+
+function renderList() {
+  renderFamilySelect();
+  const query = listQuery().trim();
+  const items = visibleProducts();
+  listState.page = clampPage(listState.page, items.length, PAGE_SIZE);
+  const start = (listState.page - 1) * PAGE_SIZE;
+  const slice = items.slice(start, start + PAGE_SIZE);
+  const indexInFamily = new Map();
+  const countInFamily = new Map();
+  for (const product of draft.products) {
+    const at = countInFamily.get(product.cat) || 0;
+    indexInFamily.set(product.id, at);
+    countInFamily.set(product.cat, at + 1);
+  }
+  const shownInFamily = new Map();
+  for (const product of items) shownInFamily.set(product.cat, (shownInFamily.get(product.cat) || 0) + 1);
+
+  ui.list.replaceChildren();
+  let section = null;
+  let rows = null;
+  let lastCat = null;
+  const reorderLocked = Boolean(query);
+  for (const product of slice) {
+    if (product.cat !== lastCat) {
+      lastCat = product.cat;
+      const category = draft.categories.find((c) => c.id === product.cat) || { id: '', label: 'Sans famille', icon: 'i-bolt' };
+      section = document.createElement('section');
+      section.className = 'admin-group';
+      if (category.id) section.dataset.dropCat = category.id;
+      const title = document.createElement('h2');
+      title.className = 'display';
+      title.innerHTML = `<svg class="i" aria-hidden="true"><use href="#${esc(category.icon || 'i-bolt')}"/></svg>${esc(category.label)}<small>${frCount(shownInFamily.get(product.cat) || 0)}</small>`;
+      section.append(title);
+      rows = document.createElement('div');
+      rows.className = 'admin-rows';
+      section.append(rows);
+      ui.list.append(section);
+    }
+    const familyIndex = indexInFamily.get(product.id) || 0;
+    const familyTotal = countInFamily.get(product.cat) || 0;
+    const locked = isProtectedProduct(product.id);
+    const row = document.createElement('article');
+    row.className = 'admin-row';
+    row.dataset.id = product.id;
+    row.innerHTML = `
         <div class="admin-handle" ${reorderLocked ? '' : 'draggable="true"'} data-drag title="${reorderLocked ? 'Effacez la recherche pour réordonner' : "Glisser pour changer l'ordre"}" aria-hidden="true">⋮⋮</div>
         <div class="admin-thumb" data-thumb-for="${esc(product.id)}"></div>
         <div>
@@ -562,28 +715,35 @@ function renderList() {
           <p class="admin-row__text"></p>
         </div>
         <div class="admin-row__actions">
-          <button type="button" class="admin-iconbtn" data-act="up" aria-label="Monter ${esc(product.name)}" ${reorderLocked || index === 0 ? 'disabled' : ''}>↑</button>
-          <button type="button" class="admin-iconbtn" data-act="down" aria-label="Descendre ${esc(product.name)}" ${reorderLocked || index === products.length - 1 ? 'disabled' : ''}>↓</button>
+          <button type="button" class="admin-iconbtn" data-act="up" aria-label="Monter ${esc(product.name)}" ${reorderLocked || familyIndex === 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" class="admin-iconbtn" data-act="down" aria-label="Descendre ${esc(product.name)}" ${reorderLocked || familyIndex >= familyTotal - 1 ? 'disabled' : ''}>↓</button>
           <button type="button" class="admin-textbtn" data-act="edit">Modifier</button>
-          <button type="button" class="admin-textbtn admin-textbtn--danger" data-act="delete">Supprimer</button>
+          <button type="button" class="admin-textbtn admin-textbtn--danger" data-act="delete" ${locked ? 'disabled' : ''}>Supprimer</button>
         </div>`;
-      row.querySelector('.admin-row__name').textContent = product.name;
-      row.querySelector('.admin-row__text').textContent = product.text;
-      rows.append(row);
-    });
-    section.append(rows);
-    ui.list.append(section);
+    const name = row.querySelector('.admin-row__name');
+    name.textContent = product.name;
+    if (locked) {
+      const badge = document.createElement('span');
+      badge.className = 'admin-lock';
+      badge.textContent = 'Protégé';
+      name.append(badge);
+    }
+    row.querySelector('.admin-row__text').textContent = product.text;
+    rows.append(row);
   }
-  if (!shown) {
+  if (!slice.length) {
     const empty = document.createElement('p');
     empty.className = 'admin-empty muted';
-    empty.textContent = needle ? 'Aucun article ne correspond.' : 'Aucun article pour le moment.';
+    empty.textContent = query || listFamily() ? 'Aucun article ne correspond.' : 'Aucun article pour le moment.';
     ui.list.append(empty);
   }
   if (ui.count) {
     const total = draft.products.length;
-    ui.count.textContent = needle ? `${shown} affiché${shown > 1 ? 's' : ''} / ${total}` : `${total} article${total > 1 ? 's' : ''}`;
+    ui.count.textContent = query || listFamily()
+      ? `${frCount(items.length)} affiché${items.length > 1 ? 's' : ''} / ${frCount(total)}`
+      : `${frCount(total)} article${total > 1 ? 's' : ''}`;
   }
+  renderPager(items.length);
   hydrateThumbs();
 }
 
@@ -595,9 +755,9 @@ function thumbUrl(id) {
 }
 
 function hydrateThumbs() {
-  for (const product of draft.products) {
-    const box = thumbBox(product.id);
-    if (!box) continue;
+  for (const box of ui.list.querySelectorAll('[data-thumb-for]')) {
+    const product = draft.products.find((p) => p.id === box.dataset.thumbFor);
+    if (!product) continue;
     const url = thumbUrl(product.id);
     box.replaceChildren();
     if (url) {
@@ -647,14 +807,17 @@ function renderFamilies() {
         <button type="button" class="admin-textbtn" data-act="cat-edit">Modifier</button>
         <button type="button" class="admin-textbtn admin-textbtn--danger" data-act="cat-delete">Supprimer</button>
       </div>`;
+    const paths = familyPaths(category.id);
+    const n = draft.products.filter((p) => p.cat === category.id).length;
     row.querySelector('h3').textContent = category.label;
     row.querySelector('p.muted').textContent = category.text;
-    row.querySelector('.admin-id').textContent = `Identifiant : ${category.id}`;
+    row.querySelector('.admin-id').textContent = `${frCount(n)} article${n > 1 ? 's' : ''} · ${paths.page} · ${paths.data}`;
     ui.families.append(row);
   });
 }
 
 function moveProductBy(id, delta) {
+  if (listQuery().trim()) return;
   const product = draft.products.find((p) => p.id === id);
   if (!product) return;
   const index = draft.products.filter((p) => p.cat === product.cat).findIndex((p) => p.id === id);
@@ -662,6 +825,7 @@ function moveProductBy(id, delta) {
   const count = draft.products.filter((p) => p.cat === product.cat).length;
   if (next < 0 || next >= count) return;
   draft = upsertProduct(draft, product, next);
+  revealProduct(id);
   renderList();
   markDirty();
   rowById(id)?.querySelector(`[data-act="${delta < 0 ? 'up' : 'down'}"]`)?.focus();
@@ -723,11 +887,13 @@ function openProduct(id) {
     height: shot?.height || 0,
     url: shot?.url || (!shot?.remove && existing ? remoteUrls.get(existing.id) || '' : ''),
   };
+  const locked = Boolean(existing && isProtectedProduct(existing.id));
   const options = draft.categories.map((c) => `<option value="${esc(c.id)}" ${c.id === cat ? 'selected' : ''}>${esc(c.label)}</option>`).join('');
   showEditor(existing ? 'Modifier l’article' : 'Nouvel article', `
     ${existing ? `<p class="admin-id">Identifiant fixe : ${esc(existing.id)}. Il ne change pas, pour ne pas casser les devis déjà enregistrés sur les téléphones des visiteurs.</p>` : '<p class="admin-id">L’identifiant est créé à partir du nom, et reste unique.</p>'}
+    ${locked ? '<p class="admin-id">Article protégé : il reste dans sa famille et ne peut pas être supprimé. La gamme Prumysl Solaire, elle, reste sur sa page dédiée.</p>' : ''}
     <label class="admin-field"><span>Nom</span><input name="name" maxlength="120" value="${esc(existing?.name || '')}" autocomplete="off"><p class="admin-err" data-err="name"></p></label>
-    <label class="admin-field"><span>Famille</span><select name="cat">${options}</select><p class="admin-err" data-err="cat"></p></label>
+    <label class="admin-field"><span>Famille</span><select name="cat" ${locked ? 'disabled' : ''}>${options}</select><p class="admin-err" data-err="cat"></p></label>
     <label class="admin-field"><span>Description</span><textarea name="text" maxlength="800">${esc(existing?.text || '')}</textarea><p class="admin-err" data-err="text"></p></label>
     <label class="admin-field"><span>Position dans la famille</span><input name="position" type="number" min="1" step="1" value="${position}"><p class="admin-err" data-err="position"></p></label>
     <div class="admin-field">
@@ -805,15 +971,26 @@ async function demoFile() {
 }
 
 function saveProduct(form) {
+  const locked = editorSession.id && isProtectedProduct(editorSession.id)
+    ? draft.products.find((p) => p.id === editorSession.id)
+    : null;
   const input = {
     name: fieldValue(form, 'name'),
-    cat: fieldValue(form, 'cat'),
+    cat: locked?.cat || fieldValue(form, 'cat'),
     text: fieldValue(form, 'text'),
     position: Number(fieldValue(form, 'position')),
   };
   const result = validateProduct(input, draft, editorSession.id || undefined);
   for (const key of ['name', 'cat', 'text', 'position', 'image']) fieldError(key, result.errors[key] || '');
   if (!result.ok) return;
+  const kept = protectionError(baseline, {
+    ...draft,
+    products: draft.products.map((p) => (p.id === result.value.id ? { ...p, cat: result.value.cat } : p)),
+  });
+  if (kept) {
+    fieldError('cat', kept);
+    return;
+  }
   if (editorSession.imageChoice === 'file' && !editorSession.blob) {
     fieldError('image', 'La photo n’est pas prête. Choisissez-la de nouveau.');
     return;
@@ -855,17 +1032,25 @@ function saveProduct(form) {
   }
   draft = upsertProduct(draft, product, value.position);
   ui.editor.close();
+  revealProduct(value.id);
   renderList();
   markDirty();
   setStatus('info', previous ? 'Article mis à jour dans la liste. Publiez pour le mettre en ligne.' : 'Article ajouté à la liste. Publiez pour le mettre en ligne.');
   rowById(value.id)?.scrollIntoView({ block: 'nearest' });
 }
 
+function familyPreview(base) {
+  const id = uniqueId(base, new Set(draft.categories.map((c) => c.id)));
+  const paths = familyPaths(id);
+  return `Page : ${paths.page} · données : ${paths.data}`;
+}
+
 function openCategory(id) {
   const existing = id ? draft.categories.find((c) => c.id === id) : null;
   editorSession = { kind: 'category', id: existing?.id || '', icon: existing?.icon || 'i-bolt' };
+  const paths = existing ? familyPaths(existing.id) : null;
   showEditor(existing ? 'Modifier la famille' : 'Nouvelle famille', `
-    ${existing ? `<p class="admin-id">Identifiant fixe : ${esc(existing.id)}. Les articles qui l’utilisent ne sont pas cassés.</p>` : '<p class="admin-id">L’identifiant est créé à partir du nom et ne changera plus.</p>'}
+    ${existing ? `<p class="admin-id">Identifiant fixe : ${esc(existing.id)}. Les articles restent rattachés. Page : ${esc(paths.page)}. Données : ${esc(paths.data)}.</p>` : `<p class="admin-id">L’identifiant est créé à partir du nom et ne changera plus. <span data-slug-preview>${esc(familyPreview(slugify('')))}</span></p>`}
     <label class="admin-field"><span>Nom</span><input name="label" maxlength="60" value="${esc(existing?.label || '')}" autocomplete="off"><p class="admin-err" data-err="label"></p></label>
     <label class="admin-field"><span>Description</span><textarea name="text" maxlength="220">${esc(existing?.text || '')}</textarea><p class="admin-err" data-err="text"></p></label>
     <div class="admin-field"><span>Icône</span>${iconPicker(editorSession.icon)}</div>`);
@@ -994,15 +1179,20 @@ function renderApp() {
         </div>
         <section data-panel="products">
           <div class="admin-toolbar">
+            <label class="admin-filter">
+              <span class="sr-only">Famille</span>
+              <select data-family></select>
+            </label>
             <label class="search">
               <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
-              <span class="sr-only">Rechercher un article</span>
-              <input type="search" data-search placeholder="Rechercher un article…" autocomplete="off">
+              <span class="sr-only">Rechercher un article par nom</span>
+              <input type="search" data-search placeholder="Rechercher par nom…" autocomplete="off">
             </label>
             <p class="admin-count" data-count></p>
             <button type="button" class="btn btn--sm btn--solid" data-add>Nouvel article</button>
           </div>
           <div data-list></div>
+          <nav class="pager" data-pager aria-label="Pagination du catalogue" hidden></nav>
         </section>
         <section data-panel="families" hidden>
           <div class="admin-toolbar">
@@ -1027,6 +1217,8 @@ function renderApp() {
   ui.publish = root.querySelector('[data-publish]');
   ui.dirty = root.querySelector('[data-dirty]');
   ui.search = root.querySelector('[data-search]');
+  ui.family = root.querySelector('[data-family]');
+  ui.pager = root.querySelector('[data-pager]');
   ui.count = root.querySelector('[data-count]');
   ui.list = root.querySelector('[data-list]');
   ui.families = root.querySelector('[data-families]');
@@ -1046,7 +1238,23 @@ function renderApp() {
       root.querySelector('[data-panel="families"]').hidden = tab.dataset.tab !== 'families';
     });
   });
-  ui.search.addEventListener('input', renderList);
+  ui.search.addEventListener('input', () => {
+    listState.page = 1;
+    renderList();
+  });
+  ui.family.addEventListener('change', () => {
+    listState.page = 1;
+    renderList();
+  });
+  ui.pager.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-page]');
+    if (!button || button.disabled || button.getAttribute('aria-disabled') === 'true') return;
+    const page = Number(button.dataset.page);
+    if (!Number.isInteger(page) || page < 1 || page === listState.page) return;
+    listState.page = page;
+    renderList();
+    ui.list.scrollIntoView({ block: 'start' });
+  });
   root.querySelector('[data-add]').addEventListener('click', () => openProduct(''));
   root.querySelector('[data-add-cat]').addEventListener('click', () => openCategory(''));
   ui.publish.addEventListener('click', publish);
@@ -1068,6 +1276,11 @@ function renderApp() {
   ui.editor.addEventListener('change', onEditorChange);
   ui.editor.addEventListener('input', (event) => {
     if (event.target.name) fieldError(event.target.name, '');
+    if (editorSession?.kind === 'category' && !editorSession.id && event.target.name === 'label') {
+      const preview = ui.editor.querySelector('[data-slug-preview]');
+      if (!preview) return;
+      preview.textContent = familyPreview(slugify(event.target.value));
+    }
   });
   ui.editor.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -1097,6 +1310,11 @@ async function onListClick(event) {
   if (button.dataset.act === 'edit') openProduct(id);
   if (button.dataset.act === 'delete') {
     const product = draft.products.find((p) => p.id === id);
+    const blocked = protectionError(baseline, deleteProduct(draft, id));
+    if (blocked) {
+      setStatus('err', blocked);
+      return;
+    }
     if (!await confirmBox(`Supprimer « ${product?.name || id} » du catalogue ?`, 'Supprimer')) return;
     draft = deleteProduct(draft, id);
     const baselineImg = baseline.products.find((p) => p.id === id)?.img;
@@ -1202,6 +1420,19 @@ function onDrop(event) {
   const id = dragId;
   const row = event.target.closest('[data-id]');
   const group = event.target.closest('[data-drop-cat]');
+  const nextCat = row && row.dataset.id !== id
+    ? draft.products.find((p) => p.id === row.dataset.id)?.cat
+    : group?.dataset.dropCat;
+  const blocked = nextCat ? protectionError(baseline, {
+    ...draft,
+    products: draft.products.map((p) => (p.id === id ? { ...p, cat: nextCat } : p)),
+  }) : '';
+  if (blocked) {
+    dragId = '';
+    clearDropStyles();
+    setStatus('err', blocked);
+    return;
+  }
   if (row && row.dataset.id !== id) {
     const target = draft.products.find((p) => p.id === row.dataset.id);
     const siblings = draft.products.filter((p) => p.cat === target.cat && p.id !== id);
@@ -1218,6 +1449,7 @@ function onDrop(event) {
   }
   dragId = '';
   clearDropStyles();
+  revealProduct(id);
   renderList();
   markDirty();
 }
@@ -1273,9 +1505,17 @@ window.addEventListener('beforeunload', (event) => {
 });
 
 async function boot() {
+  if (mockMode) {
+    try {
+      await prepareMock();
+    } catch (err) {
+      renderLogin(err.message || 'Le catalogue de démonstration est introuvable.');
+      return;
+    }
+  }
   const existing = savedToken();
   if (!existing) {
-    renderLogin(mockMode && !SEED ? 'Le mode démonstration a besoin du catalogue intégré par node build.mjs.' : '');
+    renderLogin();
     return;
   }
   token = existing;

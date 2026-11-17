@@ -83,6 +83,19 @@ test('built site hides the admin and keeps the public catalogue light', () => {
   assert.match(admin, /assets\/css\/admin\.css\?v=/);
   assert.doesNotMatch(admin, /<nav class="nav"/);
   assert.doesNotMatch(admin, /\{\{extra\}\}/);
+  assert.ok(statSync('dist/admin.html').size < 80 * 1024, 'admin.html must stay a shell');
+
+  const adminJs = read('dist/assets/js/admin.js');
+  assert.ok(adminJs.length < 120 * 1024, `admin.js inlined the catalogue (${adminJs.length} bytes)`);
+  assert.match(adminJs, /const SEED = null;/);
+  assert.doesNotMatch(adminJs, /const SEED = \{/);
+  assert.match(adminJs, /data\/produits\.json\?v=/);
+  assert.doesNotMatch(adminJs, /__CATALOGUE_URL__/);
+  assert.match(adminJs, /Pagination du catalogue/);
+  const published = JSON.parse(read('dist/data/produits.json'));
+  assert.equal(published.categories.length, catalogue.categories.length);
+  assert.equal(published.products.length, catalogue.products.length);
+  assert.equal(published.products.find((p) => p.id === 'projecteur-solaire').cat, 'eclairage-ext');
 
   assert.match(robots, /Disallow: \/pr\/admin\.html/);
   assert.match(robots, /Disallow: \/pr\/404\.html/);
@@ -91,7 +104,6 @@ test('built site hides the admin and keeps the public catalogue light', () => {
   assert.match(headers, /\/data\/\*/);
   assert.match(htaccess, /<Files "admin\.html">/);
   assert.match(htaccess, /AddType application\/json \.json/);
-  assert.match(read('dist/assets/js/admin.js'), /Projecteur solaire/);
   assert.match(read('dist/assets/js/admin.js'), /from '\.\/catalogue\.js\?v=/);
   assert.match(read('dist/assets/js/admin.js'), /https:\/\/slahmaid\.github\.io\/pr/);
 });

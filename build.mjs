@@ -224,14 +224,21 @@ const adminCss = minifyCss(readFileSync(join(root, 'assets/css/admin.css'), 'utf
 const catalogueJs = readFileSync(join(root, 'assets/js/catalogue.js'), 'utf8');
 const catalogueUiJs = readFileSync(join(root, 'assets/js/catalogue-ui.js'), 'utf8');
 let adminJs = readFileSync(join(root, 'assets/js/admin.js'), 'utf8');
-if (!adminJs.includes('const SEED = null;') || !adminJs.includes('__SITE_URL__') || !adminJs.includes("from './catalogue.js'")) {
+if (!adminJs.includes('const SEED = null;') || !adminJs.includes('__SITE_URL__') || !adminJs.includes('__CATALOGUE_URL__') || !adminJs.includes("from './catalogue.js'")) {
   throw new Error('admin.js: marqueurs de build introuvables');
 }
 const catalogueHash = shortHash(catalogueJs);
+const catalogueRaw = read('data', 'produits.json');
+const catalogueFile = catalogueRaw.endsWith('\n') ? catalogueRaw : `${catalogueRaw}\n`;
+const catalogueDataHash = shortHash(catalogueFile);
+// The admin fetches this file. Inlining ~6,800 products into admin.js made the page unusable.
 adminJs = adminJs
-  .replace('const SEED = null;', `const SEED = ${JSON.stringify(catalogue)};`)
+  .replaceAll('__CATALOGUE_URL__', `data/produits.json?v=${catalogueDataHash}`)
   .replaceAll('__SITE_URL__', siteUrl)
   .replaceAll("from './catalogue.js'", `from './catalogue.js?v=${catalogueHash}'`);
+if (adminJs.includes('const SEED = {') || adminJs.includes('__CATALOGUE_URL__')) {
+  throw new Error('admin.js: le catalogue ne doit pas être intégré dans la page');
+}
 out('assets/css/admin.css', adminCss);
 out('assets/js/catalogue.js', catalogueJs);
 out('assets/js/catalogue-ui.js', catalogueUiJs);
@@ -245,6 +252,10 @@ const versions = {
   'assets/js/catalogue.js': catalogueHash,
   'assets/js/catalogue-ui.js': shortHash(catalogueUiJs),
 };
+
+// Full source catalogue for the admin (mock mode and a same-origin fetch). Public pages use the family files.
+out('data/produits.json', catalogueFile);
+versions['data/produits.json'] = catalogueDataHash;
 
 // Per-family product JSON + a compact search index, loaded on demand by the public pages.
 for (const c of catalogue.categories) {

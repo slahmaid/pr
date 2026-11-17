@@ -1,13 +1,24 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import {
+  PAGE_SIZE,
+  clampPage,
   commitMessage,
+  contentsAreComplete,
   deleteCategory,
+  deleteProduct,
+  familyCounts,
+  familyPaths,
+  filterProducts,
   imagePath,
   isDirty,
+  isProtectedProduct,
   moveCategory,
+  pageItems,
   placeProduct,
   planImages,
+  protectionError,
   serialize,
   slugify,
   uniqueId,
@@ -122,4 +133,69 @@ test('serialize keeps the note, omits empty images, and detects order changes', 
   assert.match(commitMessage(doc, reordered, 0), /réorganisation/);
   const withPhoto = upsertProduct(doc, { ...doc.products[2], img: imagePath('dalle') }, 0);
   assert.match(commitMessage(doc, withPhoto, 1), /photo/);
+});
+
+test('pages of 20 use the same numbered window as the public catalogue', () => {
+  assert.equal(PAGE_SIZE, 20);
+  assert.deepEqual(pageItems(1, 1), [1]);
+  assert.deepEqual(pageItems(1, 5), [1, 2, 3, 4, 5]);
+  assert.deepEqual(pageItems(1, 20), [1, 2, 3, 4, '…', 20]);
+  assert.deepEqual(pageItems(10, 20), [1, '…', 9, 10, 11, '…', 20]);
+  assert.deepEqual(pageItems(19, 20), [1, '…', 17, 18, 19, 20]);
+  assert.equal(clampPage(0, 100), 1);
+  assert.equal(clampPage(9, 40), 2);
+  assert.equal(clampPage(4, 0), 1);
+});
+
+test('family filter and name search share one list', () => {
+  const cables = filterProducts(doc, { family: 'cables' });
+  assert.deepEqual(cables.map((p) => p.id), ['cable-r2v', 'gaine']);
+  const found = filterProducts(doc, { family: 'eclairage', query: 'dalle' });
+  assert.deepEqual(found.map((p) => p.id), ['dalle']);
+  assert.equal(filterProducts(doc, { query: 'câble' }).length, 1);
+  assert.equal(filterProducts(doc, { family: 'eclairage', query: 'câble' }).length, 0);
+  assert.equal(familyCounts(doc).get('cables'), 2);
+  assert.deepEqual(familyPaths('transformateurs'), {
+    page: 'produits-transformateurs.html',
+    data: 'data/produits-transformateurs.json',
+  });
+});
+
+test('the Prumysl solar catalogue row cannot be removed or moved', () => {
+  const solar = {
+    categories: doc.categories,
+    products: [...doc.products, { id: 'projecteur-solaire', cat: 'eclairage', name: 'Projecteur solaire', text: 'Gamme dédiée.' }],
+  };
+  assert.equal(isProtectedProduct('projecteur-solaire'), true);
+  assert.equal(isProtectedProduct('bouton-poussoir-prumysl'), false);
+  assert.match(protectionError(solar, deleteProduct(solar, 'projecteur-solaire')), /ne peut pas être supprimé/);
+  const moved = placeProduct(solar, 'projecteur-solaire', 'cables', 0);
+  assert.match(protectionError(solar, moved), /reste dans sa famille/);
+  const renamed = upsertProduct(solar, { ...solar.products.at(-1), name: 'Projecteur solaire LED' }, 0);
+  assert.equal(protectionError(solar, renamed), '');
+});
+
+test('a contents response over 1 MB is not treated as the whole catalogue', () => {
+  assert.equal(contentsAreComplete({ sha: 'abc', encoding: 'base64', content: 'YQ==', size: 12 }), false);
+  assert.equal(contentsAreComplete({ sha: 'abc', encoding: 'base64', content: '', size: 10 }), false);
+  assert.equal(contentsAreComplete({ sha: 'abc', encoding: 'base64', content: 'YQ==', truncated: true }), false);
+  assert.equal(contentsAreComplete({ sha: 'abc', encoding: 'base64', content: 'YQ==' }), true);
+});
+
+test('the shipped catalogue has nine families and pages of twenty', () => {
+  const live = JSON.parse(readFileSync(new URL('../src/data/produits.json', import.meta.url), 'utf8'));
+  assert.equal(live.categories.length, 9);
+  assert.equal(live.categories.some((c) => c.id === 'transformateurs' && c.label === 'Transformateurs & alimentation'), true);
+  assert.ok(live.products.length > 6000);
+  const solar = live.products.find((p) => p.id === 'projecteur-solaire');
+  assert.equal(solar.cat, 'eclairage-ext');
+  assert.equal(solar.name, 'Projecteur solaire');
+  for (const category of live.categories) {
+    const items = filterProducts(live, { family: category.id });
+    assert.equal(items.length, familyCounts(live).get(category.id));
+    assert.equal(items.slice(0, PAGE_SIZE).length, Math.min(PAGE_SIZE, items.length));
+    assert.ok(items.length > PAGE_SIZE, category.id);
+  }
+  const byName = filterProducts(live, { family: 'eclairage-ext', query: 'projecteur solaire' });
+  assert.equal(byName.some((p) => p.id === 'projecteur-solaire'), true);
 });

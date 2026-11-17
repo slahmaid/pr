@@ -229,6 +229,90 @@ export function isDirty(baseline, draft, pending) {
   return serialize(baseline) !== serialize(draft);
 }
 
+export const PAGE_SIZE = 20;
+
+// The solar range lives on prumysl-solaire.html. This catalogue row stays
+// with Éclairage extérieur and cannot be deleted or moved.
+export const PROTECTED_PRODUCTS = {
+  'projecteur-solaire': true,
+};
+
+export function isProtectedProduct(id) {
+  return Object.prototype.hasOwnProperty.call(PROTECTED_PRODUCTS, id);
+}
+
+export function protectionError(baseline, draft) {
+  const beforeList = baseline?.products || [];
+  const afterList = draft?.products || [];
+  for (const id of Object.keys(PROTECTED_PRODUCTS)) {
+    const before = beforeList.find((p) => p.id === id);
+    if (!before) continue;
+    const after = afterList.find((p) => p.id === id);
+    if (!after) return `« ${before.name} » fait partie de la gamme Prumysl et ne peut pas être supprimé.`;
+    if (after.cat !== before.cat) return `« ${before.name} » reste dans sa famille.`;
+  }
+  return '';
+}
+
+export function familyPaths(id) {
+  return { page: `produits-${id}.html`, data: `data/produits-${id}.json` };
+}
+
+export function frCount(n) {
+  return new Intl.NumberFormat('fr-FR').format(Number(n) || 0);
+}
+
+// Same window as the public catalogue: 1 … 4 5 6 … 88
+export function pageItems(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const set = new Set([1, total, current - 1, current, current + 1]);
+  if (current <= 3) [2, 3, 4].forEach((n) => set.add(n));
+  if (current >= total - 2) [total - 3, total - 2, total - 1].forEach((n) => set.add(n));
+  const nums = [...set].filter((n) => n >= 1 && n <= total).sort((a, b) => a - b);
+  const out = [];
+  for (const n of nums) {
+    if (out.length && n - out[out.length - 1] > 1) out.push('…');
+    out.push(n);
+  }
+  return out;
+}
+
+export function clampPage(page, total, pageSize = PAGE_SIZE) {
+  const pages = Math.max(1, Math.ceil(Number(total) / pageSize) || 1);
+  const n = Math.trunc(Number(page));
+  if (!Number.isInteger(n) || n < 1) return 1;
+  return Math.min(pages, n);
+}
+
+export function filterProducts(doc, { family = '', query = '' } = {}) {
+  const needle = norm(String(query || '').trim());
+  return (doc.products || []).filter((p) => {
+    if (family && p.cat !== family) return false;
+    if (!needle) return true;
+    return norm(p.name).includes(needle);
+  });
+}
+
+export function familyCounts(doc) {
+  const counts = new Map((doc.categories || []).map((c) => [c.id, 0]));
+  for (const p of doc.products || []) counts.set(p.cat, (counts.get(p.cat) || 0) + 1);
+  return counts;
+}
+
+// GitHub's contents API omits or truncates files over 1 MB. The blob API does not.
+export function contentsAreComplete(meta) {
+  if (!meta || meta.truncated) return false;
+  if (meta.encoding !== 'base64' || typeof meta.content !== 'string' || !meta.content) return false;
+  const size = Number(meta.size);
+  if (Number.isFinite(size) && size > 0) {
+    const cleaned = meta.content.replace(/\s/g, '');
+    const pad = cleaned.endsWith('==') ? 2 : cleaned.endsWith('=') ? 1 : 0;
+    const bytes = Math.floor((cleaned.length * 3) / 4) - pad;
+    if (bytes + 8 < size) return false;
+  }
+  return true;
+}
+
 export function commitMessage(baseline, draft, imageCount = 0) {
   const before = new Map(baseline.products.map((p) => [p.id, p]));
   const after = new Map(draft.products.map((p) => [p.id, p]));

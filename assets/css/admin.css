@@ -139,9 +139,35 @@
   font-size: 14px;
 }
 .admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
-.admin-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.admin-toolbar .search { max-width: none; }
+.admin-toolbar { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.admin-toolbar .search { flex: 1 1 240px; max-width: none; }
+.admin-filter { margin: 0; flex: 1 1 260px; min-width: min(100%, 260px); }
+.admin-filter select {
+  width: 100%;
+  height: 54px;
+  margin: 0;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 15px;
+}
+.admin-filter select:focus { outline: none; border-color: var(--fg); }
 .admin-count { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.admin-lock {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.admin-textbtn:disabled { opacity: .35; cursor: default; text-decoration: none; }
 
 .admin-group { margin-top: 28px; }
 .admin-group h2 { display: flex; align-items: center; gap: 10px; font-size: clamp(22px, 2vw, 32px); }
