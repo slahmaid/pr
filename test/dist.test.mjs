@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import test from 'node:test';
 
-test('built site hides the admin and renders products without photos as before', () => {
+const MAX_HTML = 150 * 1024;
+const PAGE_SIZE = 20;
+const FAMILY_WORDS = [null, 'Une', 'Deux', 'Trois', 'Quatre', 'Cinq', 'Six', 'Sept', 'Huit', 'Neuf', 'Dix', 'Onze', 'Douze'];
+
+test('built site hides the admin and keeps the public catalogue light', () => {
   const built = spawnSync(process.execPath, ['build.mjs'], { encoding: 'utf8' });
   assert.equal(built.status, 0, built.stderr || built.stdout);
 
@@ -15,12 +20,61 @@ test('built site hides the admin and renders products without photos as before',
   const sitemap = read('dist/sitemap.xml');
   const headers = read('dist/_headers');
   const htaccess = read('dist/.htaccess');
+  const catalogue = JSON.parse(read('src/data/produits.json'));
+  const searchIndex = JSON.parse(read('dist/data/produits-index.json'));
 
-  const placeholder = '<img decoding="async" src="assets/img/blank-11.svg" alt="" loading="lazy" draggable="false">';
-  assert.equal(produits.split(placeholder).length - 1, 48);
+  assert.equal(produits.includes('class="pitem"'), false, 'overview must not inline the full catalogue');
   assert.equal(produits.includes('<img decoding="async" src="assets/img/produits/'), false);
-  assert.match(produits, /Huit familles, un seul fournisseur\./);
+  const familyCount = catalogue.categories.length;
+  const heading = familyCount <= 1
+    ? 'Une famille, un seul fournisseur.'
+    : `${FAMILY_WORDS[familyCount] || familyCount} familles, un seul fournisseur.`;
+  assert.match(produits, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(produits, /Prumysl Solaire/);
+  assert.match(produits, /prumysl-solaire\.html/);
+  assert.match(produits, /data-catalogue-search/);
+  assert.match(produits, /data\/produits-index\.json\?v=/);
+  assert.match(produits, /assets\/js\/catalogue-ui\.js\?v=/);
   assert.doesNotMatch(produits, /admin\.html/);
+  assert.ok(statSync('dist/produits.html').size < MAX_HTML);
+
+  for (const cat of catalogue.categories) {
+    const file = `produits-${cat.id}.html`;
+    const dataFile = `data/produits-${cat.id}.json`;
+    const html = read(`dist/${file}`);
+    const data = JSON.parse(read(`dist/${dataFile}`));
+    const expected = catalogue.products.filter((p) => p.cat === cat.id);
+    const first = Math.min(PAGE_SIZE, expected.length);
+
+    assert.ok(statSync(`dist/${file}`).size < MAX_HTML, `${file} is too large`);
+    assert.equal(html.split('class="pitem"').length - 1, first);
+    assert.match(html, /assets\/js\/catalogue-ui\.js\?v=/);
+    assert.match(html, new RegExp(`data/produits-${cat.id}\\.json\\?v=`));
+    assert.match(sitemap, new RegExp(file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.equal(data.id, cat.id);
+    assert.equal(data.products.length, expected.length);
+    assert.deepEqual(data.products.map((p) => p.id), expected.map((p) => p.id));
+    assert.match(html, /data-add-quote/);
+    assert.match(html, /data-quote-drawer/);
+    assert.match(html, /data-catalogue-pager/);
+    assert.match(html, /aria-label="Pagination du catalogue"/);
+    assert.doesNotMatch(html, /Charger plus/);
+    assert.doesNotMatch(html, /data-load-more/);
+  }
+
+  // Homepage still reaches at least the original families; leftover #cat- hashes should be gone.
+  assert.match(index, /produits-cables\.html/);
+  assert.doesNotMatch(index, /produits\.html#cat-/);
+  assert.doesNotMatch(index, /admin\.html/);
+  assert.doesNotMatch(index, /api\.github\.com/);
+  assert.doesNotMatch(index, /\{\{extra\}\}/);
+
+  const ext = read('dist/produits-eclairage-ext.html');
+  assert.match(ext, /Projecteur solaire/);
+  assert.match(ext, /id="p-projecteur-solaire"/);
+
+  assert.equal(searchIndex.p.length, catalogue.products.length);
+  assert.ok(gzipSync(readFileSync('dist/data/produits-index.json')).length < 200 * 1024);
 
   assert.match(admin, /<meta name="robots" content="noindex">/);
   assert.match(admin, /connect-src 'self' https:\/\/api\.github\.com/);
@@ -29,16 +83,15 @@ test('built site hides the admin and renders products without photos as before',
   assert.match(admin, /assets\/css\/admin\.css\?v=/);
   assert.doesNotMatch(admin, /<nav class="nav"/);
   assert.doesNotMatch(admin, /\{\{extra\}\}/);
-  assert.doesNotMatch(index, /api\.github\.com/);
-  assert.doesNotMatch(index, /admin\.html/);
-  assert.doesNotMatch(index, /\{\{extra\}\}/);
 
   assert.match(robots, /Disallow: \/pr\/admin\.html/);
   assert.match(robots, /Disallow: \/pr\/404\.html/);
   assert.doesNotMatch(sitemap, /admin\.html/);
   assert.match(headers, /\/admin\.html\n {2}Content-Security-Policy:.*api\.github\.com/);
+  assert.match(headers, /\/data\/\*/);
   assert.match(htaccess, /<Files "admin\.html">/);
-  assert.match(read('dist/assets/js/admin.js'), /Câble rigide U-1000 R2V/);
+  assert.match(htaccess, /AddType application\/json \.json/);
+  assert.match(read('dist/assets/js/admin.js'), /Projecteur solaire/);
   assert.match(read('dist/assets/js/admin.js'), /from '\.\/catalogue\.js\?v=/);
   assert.match(read('dist/assets/js/admin.js'), /https:\/\/slahmaid\.github\.io\/pr/);
 });

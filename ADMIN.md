@@ -48,6 +48,8 @@ Le bandeau **Modifications non publiées** rappelle que rien n’est encore sur 
 
 Si quelqu’un a modifié le fichier entre-temps, la publication est refusée, la liste est rechargée depuis GitHub, et un message le dit. Il faut refaire le changement.
 
+Le déploiement reconstruit le site : une page et un fichier JSON par famille, plus un index de recherche chargé seulement quand un visiteur tape dans le champ. Le fichier `produits.json` reste la source unique des articles.
+
 Ensuite la page suit le workflow *Deploy to GitHub Pages*. Quand il est vert, le lien **Voir le catalogue en ligne** ouvre `https://slahmaid.github.io/pr/produits.html`. Comptez en général une minute. Sans la permission Actions, le commit est quand même sur `main`, mais le statut ne s’affiche pas.
 
 Un article sans photo garde le cadre blanc d’aujourd’hui. Un article avec photo l’affiche, avec un texte alternatif égal au nom.

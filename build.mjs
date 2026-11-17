@@ -84,28 +84,51 @@ const securityHeaders = {
 };
 
 /* ------------------------------------------------------------ renderers */
-function renderFilters() {
-  const count = (id) => catalogue.products.filter((p) => p.cat === id).length;
-  const chips = [`<button type="button" class="chip is-active" data-filter="all">Tout <small>${catalogue.products.length}</small></button>`];
-  for (const c of catalogue.categories) {
-    chips.push(`<button type="button" class="chip" data-filter="${c.id}">${esc(c.label)} <small>${count(c.id)}</small></button>`);
-  }
-  return chips.join('\n          ');
-}
+const PAGE_SIZE = 20;
+const familyPage = (id) => `produits-${id}.html`;
+const familyDataPath = (id) => `data/produits-${id}.json`;
+const catCount = (id) => catalogue.products.filter((p) => p.cat === id).length;
+const formatCount = (n) => new Intl.NumberFormat('fr-FR').format(n);
+const articleLabel = (n) => `${formatCount(n)} article${n > 1 ? 's' : ''}`;
 
 function renderCategories() {
-  return catalogue.categories.map((c, i) => `
+  return catalogue.categories.map((c, i) => {
+    const n = catCount(c.id);
+    return `
       <li class="tile" data-reveal="fade">
         <svg class="i tile__i"><use href="#${c.icon}"/></svg>
         <h3 class="display tile__t">${esc(c.label)}</h3>
         <p>${esc(c.text)}</p>
-        <button type="button" class="tile__a" data-filter-jump="${c.id}"><span class="sr-only">Voir ${esc(c.label)}</span></button>
+        <p class="tile__count eyebrow muted">${articleLabel(n)}</p>
+        <a class="tile__a" href="${familyPage(c.id)}"><span class="sr-only">Voir ${esc(c.label)}</span></a>
         <span class="tile__n eyebrow">${String(i + 1).padStart(2, '0')}</span>
-      </li>`).join('');
+      </li>`;
+  }).join('');
 }
 
-function figureFor(product) {
-  if (!product.img) return productFigure(product);
+function renderFamilyFilters(activeId) {
+  const chips = ['<a class="chip" href="produits.html">Toutes les familles</a>'];
+  for (const c of catalogue.categories) {
+    const current = c.id === activeId;
+    const cls = current ? 'chip is-active' : 'chip';
+    const aria = current ? ' aria-current="page"' : '';
+    chips.push(`<a class="${cls}" href="${familyPage(c.id)}"${aria}>${esc(c.label)} <small>${catCount(c.id)}</small></a>`);
+  }
+  return chips.join('\n          ');
+}
+
+function splitTitle(label) {
+  if (label.includes(' & ')) {
+    const [a, b] = label.split(' & ');
+    return [a, `& ${b}`];
+  }
+  const i = label.lastIndexOf(' ');
+  if (i > 0) return [label.slice(0, i), label.slice(i + 1)];
+  return [label, 'catalogue'];
+}
+
+function mediaFor(product) {
+  if (!product.img) return { figure: productFigure(product) };
   const rel = String(product.img);
   if (!/^assets\/img\/[a-zA-Z0-9/._-]+$/.test(rel) || rel.includes('..')) {
     throw new Error(`Chemin d'image invalide pour « ${product.name} » (${product.id})`);
@@ -114,7 +137,20 @@ function figureFor(product) {
   if (!existsSync(abs)) throw new Error(`Image introuvable pour « ${product.name} » : ${rel}`);
   const dim = readImageSize(readFileSync(abs));
   if (!dim) throw new Error(`Dimensions illisibles : ${rel}`);
-  return productFigure(product, dim);
+  return { figure: productFigure(product, dim), img: rel, width: dim.width, height: dim.height };
+}
+
+function renderProductCard(p, label) {
+  return `
+        <article class="pitem" id="p-${esc(p.id)}" data-item data-cat="${esc(p.cat)}" data-id="${esc(p.id)}" data-reveal="fade">
+          ${mediaFor(p).figure}
+          <div class="pitem__body">
+            <span class="eyebrow muted">${esc(label)}</span>
+            <h3 class="pitem__name">${esc(p.name)}</h3>
+            <p class="muted">${esc(p.text)}</p>
+            <button type="button" class="btn btn--sm pitem__add" data-add-quote data-id="${esc(p.id)}" data-name="${esc(p.name)}"><span data-add-label>Ajouter au devis</span> <svg class="i"><use href="#i-plus"/></svg></button>
+          </div>
+        </article>`;
 }
 
 const FAMILY_WORDS = [null, 'Une', 'Deux', 'Trois', 'Quatre', 'Cinq', 'Six', 'Sept', 'Huit', 'Neuf', 'Dix', 'Onze', 'Douze'];
@@ -124,18 +160,8 @@ function familiesHeading(count) {
   return `${word || count} familles, un seul fournisseur.`;
 }
 
-function renderProducts() {
-  const label = Object.fromEntries(catalogue.categories.map((c) => [c.id, c.label]));
-  return catalogue.products.map((p) => `
-        <article class="pitem" data-item data-cat="${p.cat}" data-text="${esc(norm(`${p.name} ${p.text} ${label[p.cat] || ''}`))}" data-reveal="fade">
-          ${figureFor(p)}
-          <div class="pitem__body">
-            <span class="eyebrow muted">${esc(label[p.cat])}</span>
-            <h3 class="pitem__name">${esc(p.name)}</h3>
-            <p class="muted">${esc(p.text)}</p>
-            <button type="button" class="btn btn--sm pitem__add" data-add-quote data-id="${esc(p.id)}" data-name="${esc(p.name)}"><span data-add-label>Ajouter au devis</span> <svg class="i"><use href="#i-plus"/></svg></button>
-          </div>
-        </article>`).join('');
+function renderProductCards(products, label) {
+  return products.map((p) => renderProductCard(p, label)).join('');
 }
 
 function renderPartners(list, placeholder, emptyCount) {
@@ -196,6 +222,7 @@ out('assets/js/app.js', appJs);
 out('assets/js/tower.js', towerJs);
 const adminCss = minifyCss(readFileSync(join(root, 'assets/css/admin.css'), 'utf8'));
 const catalogueJs = readFileSync(join(root, 'assets/js/catalogue.js'), 'utf8');
+const catalogueUiJs = readFileSync(join(root, 'assets/js/catalogue-ui.js'), 'utf8');
 let adminJs = readFileSync(join(root, 'assets/js/admin.js'), 'utf8');
 if (!adminJs.includes('const SEED = null;') || !adminJs.includes('__SITE_URL__') || !adminJs.includes("from './catalogue.js'")) {
   throw new Error('admin.js: marqueurs de build introuvables');
@@ -207,6 +234,7 @@ adminJs = adminJs
   .replaceAll("from './catalogue.js'", `from './catalogue.js?v=${catalogueHash}'`);
 out('assets/css/admin.css', adminCss);
 out('assets/js/catalogue.js', catalogueJs);
+out('assets/js/catalogue-ui.js', catalogueUiJs);
 out('assets/js/admin.js', adminJs);
 const versions = {
   'assets/css/style.css': shortHash(css),
@@ -215,30 +243,37 @@ const versions = {
   'assets/css/admin.css': shortHash(adminCss),
   'assets/js/admin.js': shortHash(adminJs),
   'assets/js/catalogue.js': catalogueHash,
+  'assets/js/catalogue-ui.js': shortHash(catalogueUiJs),
 };
 
-const pages = readdirSync(join(src, 'pages')).filter((f) => f.endsWith('.html'));
+// Per-family product JSON + a compact search index, loaded on demand by the public pages.
+for (const c of catalogue.categories) {
+  const products = catalogue.products.filter((p) => p.cat === c.id).map((p) => {
+    const rec = { id: p.id, name: p.name, text: p.text };
+    const media = mediaFor(p);
+    if (media.img) {
+      rec.img = media.img;
+      rec.width = media.width;
+      rec.height = media.height;
+    }
+    return rec;
+  });
+  const json = JSON.stringify({ id: c.id, label: c.label, products });
+  const rel = familyDataPath(c.id);
+  out(rel, json);
+  versions[rel] = shortHash(json);
+}
+const indexJson = JSON.stringify({
+  c: Object.fromEntries(catalogue.categories.map((c) => [c.id, c.label])),
+  p: catalogue.products.map((p) => [p.id, p.name, p.cat]),
+});
+out('data/produits-index.json', indexJson);
+versions['data/produits-index.json'] = shortHash(indexJson);
+
 const built = [];
 const assetRefs = new Set(['assets/img/logo-prumysl.svg']);
 
-for (const file of pages) {
-  const name = file.replace(/\.html$/, '');
-  const raw = read('pages', file);
-  const m = raw.match(/^\s*<!--\s*(\{[\s\S]*?\})\s*-->\s*/);
-  if (!m) throw new Error(`${file}: missing the JSON comment at the top`);
-  const meta = JSON.parse(m[1]);
-
-  let body = raw.slice(m[0].length)
-    .replace(/<!-- @cta -->/g, partial('cta'))
-    .replace(/<!-- @circuit -->/g, partial('circuit'))
-    .replace('<!-- @product-filters -->', renderFilters())
-    .replace('<!-- @product-categories -->', renderCategories())
-    .replace('<!-- @products -->', renderProducts())
-    .replace('<!-- @families-heading -->', familiesHeading(catalogue.categories.length))
-    .replace('<!-- @partners-fabricants -->', renderPartners(partners.fabricants, 'Logo partenaire', 12))
-    .replace('<!-- @partners-clients -->', renderPartners(partners.clients, 'Logo client', 8))
-    .trim();
-
+function emitPage({ file, name, meta, body, note }) {
   const has3d = body.includes('data-tower');
   const pageUrl = siteUrl ? `${siteUrl}/${name === 'index' ? '' : file}` : '';
   const metaTags = [];
@@ -261,6 +296,12 @@ for (const file of pages) {
   const current = (html) => html.replace(new RegExp(`data-nav="${meta.nav}"`, 'g'), `data-nav="${meta.nav}" aria-current="page"`);
   let end = partial('end');
   if (!has3d) end = end.replace(/\s*<script src="assets\/js\/tower\.js" defer><\/script>/, '');
+  if (meta.catalogue) {
+    end = end.replace(
+      '<script src="assets/js/app.js" defer></script>',
+      '<script src="assets/js/app.js" defer></script>\n<script src="assets/js/catalogue-ui.js" defer></script>',
+    );
+  }
 
   const head = partial('head')
     .replace('{{base}}', meta.base ? `<base href="${basePath}">\n` : '')
@@ -272,7 +313,7 @@ for (const file of pages) {
     .replace('{{extra}}', meta.admin ? '<link rel="stylesheet" href="assets/css/admin.css">' : '')
     .replace('{{jsonld}}', name === 'index' ? jsonLd() : '');
 
-  const shell = `<!-- Généré par build.mjs à partir de src/pages/${file} : modifiez la source puis relancez « node build.mjs ». -->`;
+  const shell = `<!-- ${note} -->`;
   let html = meta.bare
     ? `<!doctype html>
 ${shell}
@@ -315,7 +356,6 @@ ${end}
 </html>
 `;
 
-  // Images decode off the main thread; CSS/JS get their version stamp.
   html = html.replace(/<img (?![^>]*decoding=)/g, '<img decoding="async" ');
   for (const [asset, v] of Object.entries(versions)) html = html.split(`"${asset}"`).join(`"${asset}?v=${v}"`);
   for (const ref of html.matchAll(/(?:src|href)="(assets\/[^"?#]+)/g)) assetRefs.add(ref[1]);
@@ -323,6 +363,68 @@ ${end}
   out(file, html);
   built.push({ file, name, meta });
   console.log(`built ${file}`);
+}
+
+const pages = readdirSync(join(src, 'pages')).filter((f) => f.endsWith('.html'));
+for (const file of pages) {
+  const name = file.replace(/\.html$/, '');
+  const raw = read('pages', file);
+  const m = raw.match(/^\s*<!--\s*(\{[\s\S]*?\})\s*-->\s*/);
+  if (!m) throw new Error(`${file}: missing the JSON comment at the top`);
+  const meta = JSON.parse(m[1]);
+
+  const body = raw.slice(m[0].length)
+    .replace(/<!-- @cta -->/g, partial('cta'))
+    .replace(/<!-- @circuit -->/g, partial('circuit'))
+    .replace('<!-- @product-categories -->', renderCategories())
+    .replace('<!-- @families-heading -->', familiesHeading(catalogue.categories.length))
+    .replace('<!-- @partners-fabricants -->', renderPartners(partners.fabricants, 'Logo partenaire', 12))
+    .replace('<!-- @partners-clients -->', renderPartners(partners.clients, 'Logo client', 8))
+    .trim();
+
+  emitPage({
+    file,
+    name,
+    meta,
+    body,
+    note: `Généré par build.mjs à partir de src/pages/${file} : modifiez la source puis relancez « node build.mjs ».`,
+  });
+}
+
+const familyTemplate = partial('produits-famille');
+for (const c of catalogue.categories) {
+  const items = catalogue.products.filter((p) => p.cat === c.id);
+  const n = items.length;
+  const [title1, title2] = splitTitle(c.label);
+  const lead = `${esc(c.text)}. ${articleLabel(n)}, à ajouter à votre liste pour un devis&nbsp;: prix et disponibilités sur demande.`;
+  const body = familyTemplate
+    .replace(/<!-- @cta -->/g, partial('cta'))
+    .replace(/<!-- @circuit -->/g, partial('circuit'))
+    .replace(/<!-- @family-label -->/g, esc(c.label))
+    .replace(/<!-- @family-label-attr -->/g, esc(c.label))
+    .replace(/<!-- @family-id -->/g, esc(c.id))
+    .replace(/<!-- @family-src -->/g, familyDataPath(c.id))
+    .replace(/<!-- @family-title-1 -->/g, esc(title1))
+    .replace(/<!-- @family-title-2 -->/g, esc(title2))
+    .replace(/<!-- @family-lead -->/g, lead)
+    .replace(/<!-- @family-count -->/g, articleLabel(n))
+    .replace(/<!-- @family-filters -->/g, renderFamilyFilters(c.id))
+    .replace(/<!-- @family-products -->/g, renderProductCards(items.slice(0, PAGE_SIZE), c.label))
+    .trim();
+
+  emitPage({
+    file: familyPage(c.id),
+    name: `produits-${c.id}`,
+    meta: {
+      title: `${c.label} | Catalogue Prumysl`,
+      description: `${c.text} : ${articleLabel(n)}. Ajoutez des articles à votre liste et recevez un devis Prumysl.`,
+      nav: 'produits',
+      preloader: 'quick',
+      catalogue: true,
+    },
+    body,
+    note: 'Généré par build.mjs à partir du catalogue (src/data/produits.json).',
+  });
 }
 
 // Only the files the pages actually use are published.
@@ -374,6 +476,10 @@ ${Object.entries(securityHeaders).map(([k, v]) => `  ${k}: ${v}`).join('\n')}
 /assets/img/*
   Cache-Control: public, max-age=604800
 
+/data/*
+  Cache-Control: public, max-age=604800
+  Content-Type: application/json; charset=utf-8
+
 # Admin only: GitHub API and local image previews. Public pages keep connect-src 'self'.
 /admin.html
   Content-Security-Policy: ${adminCspHeader}
@@ -387,6 +493,7 @@ ErrorDocument 404 ${basePath}404.html
 AddDefaultCharset utf-8
 AddType image/svg+xml .svg
 AddType font/woff2 .woff2
+AddType application/json .json
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
@@ -417,7 +524,7 @@ ${Object.entries(securityHeaders).map(([k, v]) => `  Header always set ${k} "${v
   <FilesMatch "\\.(css|js)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
-  <FilesMatch "\\.(svg|webp|jpg|jpeg|png|woff2)$">
+  <FilesMatch "\\.(svg|webp|jpg|jpeg|png|woff2|json)$">
     Header set Cache-Control "public, max-age=604800"
   </FilesMatch>
 
@@ -434,4 +541,4 @@ ${Object.entries(securityHeaders).map(([k, v]) => `  Header always set ${k} "${v
 </IfModule>
 `);
 
-console.log(`dist/ ready: ${built.length} pages, ${copied} images, CSS ${(css.length / 1024).toFixed(1)} KB`);
+console.log(`dist/ ready: ${built.length} pages, ${copied} images, ${catalogue.categories.length} family JSON files, CSS ${(css.length / 1024).toFixed(1)} KB`);

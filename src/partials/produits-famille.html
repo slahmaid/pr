@@ -1,0 +1,51 @@
+<main id="main">
+
+<section class="phero" id="top" data-theme="dark" data-section>
+  <!-- @circuit -->
+  <div class="phero__inner">
+    <nav class="crumbs eyebrow" aria-label="Fil d'Ariane" data-hero-fade><a href="index.html">Accueil</a><span aria-hidden="true">/</span><a href="produits.html">Produits</a><span aria-hidden="true">/</span><span aria-current="page"><!-- @family-label --></span></nav>
+    <h1 class="display hero__title phero__title">
+      <span class="line"><span style="--i:0"><!-- @family-title-1 --></span></span>
+      <span class="line"><span style="--i:1"><!-- @family-title-2 --></span></span>
+    </h1>
+    <p class="phero__lead" data-hero-fade style="--i:1"><!-- @family-lead --></p>
+  </div>
+</section>
+
+<section class="s catalogue" id="catalogue" data-theme="light" data-section data-catalogue-family="<!-- @family-id -->" data-catalogue-src="<!-- @family-src -->" data-catalogue-label="<!-- @family-label-attr -->">
+  <header class="shead" data-reveal="fade"><span class="shead__n">01</span><span class="shead__t">Catalogue</span><span class="shead__of">/ 01</span></header>
+
+  <div class="cat-toolbar">
+    <label class="search">
+      <svg class="i"><use href="#i-search"/></svg>
+      <span class="sr-only">Rechercher dans cette famille</span>
+      <input type="search" placeholder="Rechercher dans cette famille…" data-family-search autocomplete="off">
+    </label>
+    <p class="cat-count eyebrow muted" data-count-out aria-live="polite"><!-- @family-count --></p>
+  </div>
+  <div class="cat-filters" role="navigation" aria-label="Familles de produits">
+          <!-- @family-filters -->
+  </div>
+  <p class="cat-status muted" data-catalogue-status hidden></p>
+
+  <div class="pgrid" data-catalogue-grid><!-- @family-products -->
+  </div>
+  <nav class="pager" data-catalogue-pager hidden aria-label="Pagination du catalogue"></nav>
+  <p class="empty muted" data-empty hidden>Aucun article ne correspond à votre recherche. <a class="ul" href="contact.html">Décrivez-nous votre besoin</a>, nous le trouverons pour vous.</p>
+  <noscript><p class="empty muted">Les 20 premiers articles sont affichés. Activez JavaScript pour parcourir les autres pages, ou <a class="ul" href="contact.html">écrivez-nous</a>.</p></noscript>
+
+  <aside class="cat-help" data-reveal="fade">
+    <div>
+      <p class="eyebrow muted">Vous ne trouvez pas votre article&nbsp;?</p>
+      <p class="lead">Envoyez-nous votre liste ou vos références, nous vous répondons avec un devis.</p>
+    </div>
+    <div class="cat-help__btns">
+      <a class="btn btn--solid" href="contact.html?besoin=Fourniture%20de%20mat%C3%A9riel">Envoyer ma liste <svg class="i"><use href="#i-arrow"/></svg></a>
+      <a class="btn" href="produits.html">Toutes les familles</a>
+    </div>
+  </aside>
+</section>
+
+<!-- @cta -->
+
+</main>

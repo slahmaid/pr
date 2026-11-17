@@ -826,6 +826,7 @@
     renderQuote();
   });
   renderQuote();
+  document.addEventListener('catalogue:rendered', renderQuote);
 
   /* ------------------------------------------------- catalogue filtering */
   // [data-filterable] blocks: chips [data-filter], optional search [data-search],
@@ -885,9 +886,14 @@
     e.preventDefault();
     jumpToCat(jump.dataset.filterJump);
   });
-  // produits.html#cat-ventilation opens the catalogue on that family.
+  // Legacy bookmarks: produits.html#cat-ventilation now opens the family page.
   const hashCat = (location.hash.match(/^#cat-([\w-]+)$/) || [])[1];
-  if (hashCat) filterables.forEach((f) => f.setCat(hashCat));
+  if (hashCat && document.body.dataset.page === 'produits') {
+    const dest = `produits-${hashCat}.html`;
+    if (document.querySelector(`a[href^="${dest}"]`)) location.replace(dest);
+  } else if (hashCat) {
+    filterables.forEach((f) => f.setCat(hashCat));
+  }
 
   /* ---------------------------------------------------------------- form */
   $$('[data-form]').forEach((form) => {

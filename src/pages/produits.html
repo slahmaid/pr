@@ -3,7 +3,8 @@
   "title": "Catalogue matériel électrique, éclairage et ventilation | Prumysl",
   "description": "Câbles, appareillage, protection, éclairage intérieur et extérieur, ventilation, courants faibles et outillage : composez votre liste et recevez un devis Prumysl.",
   "nav": "produits",
-  "preloader": "quick"
+  "preloader": "quick",
+  "catalogue": true
 }
 -->
 <main id="main">
@@ -16,7 +17,7 @@
       <span class="line"><span style="--i:0">Catalogue</span></span>
       <span class="line"><span style="--i:1">matériel</span></span>
     </h1>
-    <p class="phero__lead" data-hero-fade style="--i:1">Matériel électrique, éclairage et ventilation pour vos chantiers. Ajoutez des articles à votre liste, puis envoyez-la pour recevoir un devis&nbsp;: prix et disponibilités sur demande.</p>
+    <p class="phero__lead" data-hero-fade style="--i:1">Matériel électrique, éclairage et ventilation pour vos chantiers. Choisissez une famille, ajoutez des articles à votre liste, puis envoyez-la pour recevoir un devis&nbsp;: prix et disponibilités sur demande.</p>
   </div>
 </section>
 
@@ -25,37 +26,37 @@
   <header class="shead" data-reveal="fade"><span class="shead__n">01</span><span class="shead__t">Familles de produits</span><span class="shead__of">/ 02</span></header>
   <div class="split">
     <h2 class="display h2" data-split><!-- @families-heading --></h2>
-    <p class="lead muted" data-reveal="fade">Choisissez une famille pour afficher les articles correspondants, ou parcourez tout le catalogue ci-dessous.</p>
+    <p class="lead muted" data-reveal="fade">Chaque famille a sa propre page, pour un catalogue rapide même avec des milliers d'articles. Cliquez sur une famille pour parcourir les produits et les ajouter à votre devis.</p>
   </div>
   <ul class="tiles tiles--cats" data-stagger><!-- @product-categories -->
   </ul>
 </section>
 
-<!-- ====== 02 Catalogue ====== -->
-<!-- Les articles viennent de src/data/produits.json. Le champ facultatif img ajoute une photo. -->
-<section class="s catalogue" id="catalogue" data-theme="light" data-section data-filterable>
-  <header class="shead" data-reveal="fade"><span class="shead__n">02</span><span class="shead__t">Catalogue</span><span class="shead__of">/ 02</span></header>
+<!-- ====== 02 Global search ====== -->
+<section class="s catalogue" id="catalogue" data-theme="light" data-section data-catalogue-search data-catalogue-index="data/produits-index.json">
+  <header class="shead" data-reveal="fade"><span class="shead__n">02</span><span class="shead__t">Recherche</span><span class="shead__of">/ 02</span></header>
+  <div class="split">
+    <h2 class="display h2" data-split>Vous cherchez une référence&nbsp;?</h2>
+    <p class="lead muted" data-reveal="fade">Tapez un nom ou une désignation&nbsp;: la recherche parcourt tout le catalogue, puis vous ouvre la fiche dans sa famille.</p>
+  </div>
 
   <div class="cat-toolbar">
     <label class="search">
       <svg class="i"><use href="#i-search"/></svg>
-      <span class="sr-only">Rechercher un article</span>
-      <input type="search" placeholder="Rechercher un article…" data-search autocomplete="off">
+      <span class="sr-only">Rechercher un article dans tout le catalogue</span>
+      <input type="search" placeholder="Rechercher un article…" data-global-search autocomplete="off">
     </label>
     <p class="cat-count eyebrow muted" data-count-out aria-live="polite"></p>
   </div>
-  <div class="cat-filters" role="group" aria-label="Filtrer par famille">
-          <!-- @product-filters -->
-  </div>
-
-  <div class="pgrid"><!-- @products -->
-  </div>
+  <p class="cat-status muted" data-catalogue-status hidden></p>
+  <ul class="sresults" data-search-results hidden></ul>
   <p class="empty muted" data-empty hidden>Aucun article ne correspond à votre recherche. <a class="ul" href="contact.html">Décrivez-nous votre besoin</a>, nous le trouverons pour vous.</p>
+  <noscript><p class="empty muted">Activez JavaScript pour rechercher dans le catalogue, ou <a class="ul" href="contact.html">écrivez-nous</a>.</p></noscript>
 
   <aside class="cat-help" data-reveal="fade">
     <div>
       <p class="eyebrow muted">Vous ne trouvez pas votre article&nbsp;?</p>
-      <p class="lead">Ce catalogue présente une sélection. Envoyez-nous votre liste ou vos références, nous vous répondons avec un devis.</p>
+      <p class="lead">Envoyez-nous votre liste ou vos références, nous vous répondons avec un devis.</p>
     </div>
     <div class="cat-help__btns">
       <a class="btn btn--solid" href="contact.html?besoin=Fourniture%20de%20mat%C3%A9riel">Envoyer ma liste <svg class="i"><use href="#i-arrow"/></svg></a>
