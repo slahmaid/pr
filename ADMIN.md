@@ -2,7 +2,7 @@
 
 La page d’administration est ici, une fois le site en ligne :
 
-**https://slahmaid.github.io/pr/admin.html**
+**https://prumysl.ma/admin**
 
 Elle n’apparaît pas dans le menu, ni dans Google. Enregistrez-la dans les favoris du navigateur que vous utilisez pour le catalogue.
 
@@ -58,7 +58,7 @@ Le fichier dépasse 1 Mo. S’il est trop gros pour l’API « contents » de Gi
 
 Le déploiement reconstruit le site : une page et un fichier JSON par famille, plus un index de recherche chargé seulement quand un visiteur tape dans le champ. Le fichier `produits.json` reste la source unique des articles.
 
-Ensuite la page suit le workflow *Deploy to GitHub Pages*. Quand il est vert, le lien **Voir le catalogue en ligne** ouvre `https://slahmaid.github.io/pr/produits.html`. Comptez en général une minute. Sans la permission Actions, le commit est quand même sur `main`, mais le statut ne s’affiche pas.
+Ensuite la page suit le workflow *Deploy to GitHub Pages*. Quand il est vert, le lien **Voir le catalogue en ligne** ouvre `https://prumysl.ma/produits`. Comptez en général une minute. Sans la permission Actions, le commit est quand même sur `main`, mais le statut ne s’affiche pas.
 
 Un article sans photo garde le cadre blanc d’aujourd’hui. Un article avec photo l’affiche, avec un texte alternatif égal au nom.
 

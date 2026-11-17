@@ -29,8 +29,8 @@
     <div>
       <ul class="infos" data-stagger>
         <li class="info" data-reveal="fade"><svg class="i"><use href="#i-phone"/></svg><div><p class="eyebrow muted">Téléphone</p><a class="info__v" href="tel:+212723496854">07 23 49 68 54</a></div></li>
-        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-chat"/></svg><div><p class="eyebrow muted">WhatsApp</p><a class="info__v" href="https://wa.me/212723496854?text=Bonjour%20Prumysl%2C%20je%20souhaite%20un%20renseignement." target="_blank" rel="noopener">Écrire sur WhatsApp</a></div></li>
-        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-pin"/></svg><div><p class="eyebrow muted">Adresse</p><a class="info__v" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener">Av. Tizi Ousli<br>Casablanca 20580</a></div></li>
+        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-chat"/></svg><div><p class="eyebrow muted">WhatsApp</p><a class="info__v" href="https://wa.me/212723496854?text=Bonjour%20Prumysl%2C%20je%20souhaite%20un%20renseignement." target="_blank" rel="noopener noreferrer">Écrire sur WhatsApp</a></div></li>
+        <li class="info" data-reveal="fade"><svg class="i"><use href="#i-pin"/></svg><div><p class="eyebrow muted">Adresse</p><a class="info__v" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener noreferrer">Av. Tizi Ousli<br>Casablanca 20580</a></div></li>
         <li class="info" data-reveal="fade"><svg class="i"><use href="#i-clock"/></svg><div><p class="eyebrow muted">Horaires</p><p class="info__v">Lundi – samedi<br>8&nbsp;h&nbsp;30 – 18&nbsp;h&nbsp;30</p></div></li>
       </ul>
       <!-- Google Maps: loads by itself once the visitor has accepted cookies, otherwise on click -->
@@ -42,12 +42,12 @@
           <p class="mapembed__addr"><b>Prumysl Maroc</b><br>Av. Tizi Ousli, Casablanca 20580</p>
           <div class="mapembed__btns">
             <button type="button" class="btn btn--sm btn--solid" data-mapembed-load>Afficher la carte</button>
-            <a class="btn btn--sm" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener">Itinéraire <svg class="i"><use href="#i-external"/></svg></a>
+            <a class="btn btn--sm" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener noreferrer">Itinéraire <svg class="i"><use href="#i-external"/></svg></a>
           </div>
           <p class="mapembed__note muted">Carte fournie par Google Maps.</p>
         </div>
       </div>
-      <a class="ul mapembed__link" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener">Ouvrir dans Google Maps ↗</a>
+      <a class="ul mapembed__link" href="https://maps.app.goo.gl/xQ6QNBGRLcaaqMGa6" target="_blank" rel="noopener noreferrer">Ouvrir dans Google Maps ↗</a>
     </div>
 
     <form class="form" data-form novalidate data-reveal="fade">
@@ -104,11 +104,12 @@
           <span>J'accepte le traitement de mes données personnelles conformément à la <a href="mentions-legales.html#donnees">politique de confidentialité</a>.</span>
         </label>
         <button class="btn btn--solid" type="submit">Envoyer ma demande <svg class="i"><use href="#i-arrow"/></svg></button>
-        <p class="form__note muted">Formulaire de démonstration&nbsp;: rien n'est encore envoyé. Connectez-le à votre serveur ou à un service de formulaires avant la mise en ligne.</p>
+        <p class="form__note muted" data-form-wait aria-live="polite">Votre demande s'ouvre dans WhatsApp, déjà rédigée&nbsp;: il ne reste qu'à l'envoyer.</p>
       </div>
       <div class="form__done" role="status" aria-live="polite">
         <h3 class="display h2">Merci.</h3>
-        <p class="lead muted">Votre demande a bien été enregistrée. Notre équipe vous rappelle rapidement.</p>
+        <p class="lead muted">Votre demande est prête dans WhatsApp&nbsp;: appuyez sur Envoyer pour nous la transmettre. Notre équipe vous rappelle rapidement.</p>
+        <p><a class="ul" data-form-wa href="https://wa.me/212723496854" target="_blank" rel="noopener noreferrer">WhatsApp ne s'est pas ouvert&nbsp;? Cliquez ici.</a></p>
       </div>
     </form>
   </div>

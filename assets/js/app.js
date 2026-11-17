@@ -2,13 +2,14 @@
  * Site interactions: preloader, inertial smooth scroll, scroll reveals,
  * parallax, pinned horizontal gallery, sliders, carousel, map, modals, menu,
  * image preview on hover, form, cookie notice.
- * No build step and no dependencies; three.js (3D only) loads from a CDN.
+ * No build step and no dependencies; three.js (3D only) is served from assets/vendor.
  */
 (function () {
   'use strict';
 
-  // Minified build (670 KB instead of 1.27 MB); pages with 3D preload it with an integrity hash.
-  const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
+  // three.js r160, minified, hosted on this site (no CDN request). Pages with 3D
+  // preload the same file with an integrity hash. Resolved next to this script.
+  const THREE_URL = new URL('../vendor/three.module.min.js', (document.currentScript && document.currentScript.src) || location.href).href;
 
   const root = document.documentElement;
   const $ = (s, c) => (c || document).querySelector(s);
@@ -919,12 +920,24 @@
     const besoin = new URLSearchParams(location.search).get('besoin');
     if (need && besoin && Array.from(need.options).some((o) => o.value === besoin)) need.value = besoin;
 
+    // Anti-spam: robots fill the hidden "website" field, submit within a second
+    // or two of the page loading, paste links, or submit again and again.
+    // They get the success screen, and nothing is sent.
+    const shownAt = Date.now();
+    const LAST_KEY = 'prumysl-form-last';
+    const MIN_FILL_MS = 3000;
+    const COOLDOWN_MS = 60 * 1000;
+    const fakeSuccess = () => form.classList.add('is-sent');
+    const tooManyLinks = (s) => (String(s).match(/https?:\/\/|www\.|\[url|<a\s/gi) || []).length;
+    const lastSent = () => {
+      try { return Number(localStorage.getItem(LAST_KEY)) || 0; } catch (err) { return 0; }
+    };
+
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      // Spam robots fill the hidden "website" field: pretend success, send nothing.
       const trap = form.elements.website;
-      if (trap && trap.value) {
-        form.classList.add('is-sent');
+      if ((trap && trap.value) || Date.now() - shownAt < MIN_FILL_MS) {
+        fakeSuccess();
         return;
       }
       const name = form.elements.name;
@@ -936,14 +949,39 @@
       if (phone.value.replace(/\D/g, '').length < 9) { setError(phone, 'Veuillez saisir un numéro de téléphone valide.'); ok = false; }
       if (city && city.value.trim().length < 2) { setError(city, 'Veuillez indiquer votre ville.'); ok = false; }
       if (email && email.value && !/^\S+@\S+\.\S+$/.test(email.value)) { setError(email, 'Veuillez vérifier l’adresse e-mail.'); ok = false; }
+      if (/https?:|www\.|[<>]/i.test(name.value)) { setError(name, 'Veuillez indiquer votre nom.'); ok = false; }
+      if (message && tooManyLinks(message.value) > 2) { setError(message, 'Trop de liens dans le message.'); ok = false; }
       if (!consent.checked) { setError(consent, 'Obligatoire'); ok = false; }
       if (!ok) {
         const first = $('.is-error input, .is-error textarea', form);
         if (first) first.focus();
         return;
       }
-      // TODO: send the data to your backend or form service here, e.g.
-      // fetch('/api/lead', { method: 'POST', body: new FormData(form) })
+      const since = Date.now() - lastSent();
+      if (since < COOLDOWN_MS) {
+        const out = $('[data-form-wait]', form);
+        if (out) out.textContent = 'Demande déjà envoyée. Patientez ' + Math.ceil((COOLDOWN_MS - since) / 1000) + ' s avant d’en envoyer une autre.';
+        return;
+      }
+      // No server: the request is handed to WhatsApp, already written.
+      const clean = (v) => String(v || '').replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').trim();
+      const company = form.elements.company;
+      const lines = [
+        'Bonjour Prumysl, voici ma demande :',
+        '',
+        'Nom : ' + clean(name.value),
+        company && clean(company.value) ? 'Entreprise : ' + clean(company.value) : '',
+        'Téléphone : ' + clean(phone.value),
+        email && clean(email.value) ? 'E-mail : ' + clean(email.value) : '',
+        city ? 'Ville : ' + clean(city.value) : '',
+        need ? 'Besoin : ' + clean(need.value) : '',
+        message && clean(message.value) ? '\n' + clean(message.value) : '',
+      ].filter(Boolean);
+      const url = WA_URL + '?text=' + encodeURIComponent(lines.join('\n').slice(0, 3500));
+      try { localStorage.setItem(LAST_KEY, String(Date.now())); } catch (err) { /* storage unavailable */ }
+      const link = $('[data-form-wa]', form);
+      if (link) link.href = url;
+      window.open(url, '_blank', 'noopener,noreferrer');
       form.classList.add('is-sent');
     });
   });
@@ -961,7 +999,7 @@
     frame.src = box.dataset.src;
     frame.title = box.dataset.title || 'Carte';
     frame.loading = 'lazy';
-    frame.referrerPolicy = 'no-referrer-when-downgrade';
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
     frame.allowFullscreen = true;
     box.appendChild(frame);
     box.classList.add('is-loaded');

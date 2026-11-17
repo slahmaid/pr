@@ -341,7 +341,7 @@ function addStatusLink(href, label) {
   a.href = href;
   a.textContent = label;
   a.target = '_blank';
-  a.rel = 'noopener';
+  a.rel = 'noopener noreferrer';
   box.append(a);
 }
 
@@ -1090,7 +1090,7 @@ function renderLogin(message) {
         <p class="lead">Publiez les articles sur le site, depuis ce navigateur. Rien n’est envoyé tant que le jeton n’est pas reconnu.</p>
         <h2 class="h3">Créer le jeton GitHub</h2>
         <ol class="admin-steps">
-          <li>Ouvrez <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">les jetons fins GitHub</a>. Nom : « Prumysl catalogue ». Expiration : 90 jours.</li>
+          <li>Ouvrez <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">les jetons fins GitHub</a>. Nom : « Prumysl catalogue ». Expiration : 90 jours.</li>
           <li>Repository access : Only select repositories, puis <strong>slahmaid/pr</strong> uniquement.</li>
           <li>Permissions du dépôt : <strong>Contents : Read and write</strong>. Pour suivre la mise en ligne : <strong>Actions : Read-only</strong>.</li>
           <li>Generate token, copiez la valeur (elle commence par github_pat_) et collez-la ci-dessous.</li>

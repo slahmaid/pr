@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import test from 'node:test';
 
@@ -32,7 +32,7 @@ test('built site hides the admin and keeps the public catalogue light', () => {
   assert.match(produits, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(produits, /Prumysl Solaire/);
   assert.match(produits, /href="prumysl-solaire"/);
-  assert.match(produits, /rel="canonical" href="https:\/\/slahmaid\.github\.io\/pr\/produits"/);
+  assert.match(produits, /rel="canonical" href="https:\/\/prumysl\.ma\/produits"/);
   assert.match(produits, /data-catalogue-search/);
   assert.match(produits, /data\/produits-index\.json\?v=/);
   assert.match(produits, /assets\/js\/catalogue-ui\.js\?v=/);
@@ -67,7 +67,7 @@ test('built site hides the admin and keeps the public catalogue light', () => {
   // Homepage still reaches at least the original families; leftover #cat- hashes should be gone.
   assert.match(index, /href="produits-cables"/);
   assert.match(index, /href="\.\/"/);
-  assert.match(index, /rel="canonical" href="https:\/\/slahmaid\.github\.io\/pr\/"/);
+  assert.match(index, /rel="canonical" href="https:\/\/prumysl\.ma\/"/);
   assert.doesNotMatch(index, /href="[^"]*\.html/);
   assert.doesNotMatch(index, /produits\.html#cat-/);
   assert.doesNotMatch(sitemap, /\.html/);
@@ -103,15 +103,42 @@ test('built site hides the admin and keeps the public catalogue light', () => {
   assert.equal(published.products.length, catalogue.products.length);
   assert.equal(published.products.find((p) => p.id === 'projecteur-solaire').cat, 'eclairage-ext');
 
-  assert.match(robots, /Disallow: \/pr\/admin\.html/);
-  assert.match(robots, /Disallow: \/pr\/admin\n/);
-  assert.match(robots, /Disallow: \/pr\/404\.html/);
-  assert.match(robots, /Disallow: \/pr\/404\n/);
+  // robots.txt is public: it must not point to the admin page (noindex covers it).
+  assert.doesNotMatch(robots, /admin/);
+  assert.match(robots, /Sitemap: https:\/\/prumysl\.ma\/sitemap\.xml/);
   assert.doesNotMatch(sitemap, /admin\.html/);
   assert.match(headers, /\/admin\.html\n {2}Content-Security-Policy:.*api\.github\.com/);
   assert.match(headers, /\/data\/\*/);
   assert.match(htaccess, /<Files "admin\.html">/);
   assert.match(htaccess, /AddType application\/json \.json/);
   assert.match(read('dist/assets/js/admin.js'), /from '\.\/catalogue\.js\?v=/);
-  assert.match(read('dist/assets/js/admin.js'), /https:\/\/slahmaid\.github\.io\/pr/);
+  assert.match(read('dist/assets/js/admin.js'), /https:\/\/prumysl\.ma/);
+});
+
+test('public pages make no third-party requests and resist framing', () => {
+  const built = spawnSync(process.execPath, ['build.mjs'], { encoding: 'utf8' });
+  assert.equal(built.status, 0, built.stderr || built.stdout);
+  const pages = readdirSync('dist').filter((f) => f.endsWith('.html'));
+  assert.ok(pages.length > 10);
+  for (const file of pages) {
+    const html = readFileSync(`dist/${file}`, 'utf8');
+    const csp = (html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1] || '';
+    assert.ok(csp, `${file}: CSP missing`);
+    assert.match(csp, /script-src 'self' 'sha256-[^']+'(;|$)/, `${file}: scripts must come from this site only`);
+    assert.match(csp, /object-src 'none'/);
+    assert.match(csp, /base-uri 'self'/);
+    assert.doesNotMatch(html, /fonts\.googleapis|fonts\.gstatic|cdn\.jsdelivr|unpkg|googletagmanager|google-analytics/, `${file}: third-party asset`);
+    assert.doesNotMatch(html, /<script[^>]+src="https?:/, `${file}: external script`);
+    assert.match(html, /<meta name="referrer" content="same-origin">/);
+    assert.match(html, /window\.top!==window\.self/, `${file}: frame-busting missing`);
+    for (const a of html.match(/<a [^>]*target="_blank"[^>]*>/g) || []) {
+      assert.match(a, /rel="noopener noreferrer"/, `${file}: ${a}`);
+    }
+  }
+  const sec = readFileSync('dist/.well-known/security.txt', 'utf8');
+  assert.match(sec, /^Contact: /m);
+  assert.match(sec, /^Expires: \d{4}-\d\d-\d\dT/m);
+  assert.ok(statSync('dist/assets/vendor/three.module.min.js').size > 100000);
+  assert.ok(statSync('dist/assets/fonts/archivo-latin.woff2').size > 10000);
+  assert.ok(statSync('dist/assets/fonts/archivo-latin-ext.woff2').size > 10000);
 });

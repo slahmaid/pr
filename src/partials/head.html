@@ -5,14 +5,12 @@
 <meta name="description" content="{{description}}">
 <meta name="theme-color" content="#1a2160">
 <meta name="format-detection" content="telephone=no">
-<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="referrer" content="same-origin">
 {{meta}}
 <link rel="icon" type="image/svg+xml" href="assets/img/logo-prumysl.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
 {{preload}}
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 {{extra}}
-<script>document.documentElement.classList.replace('no-js', 'js');</script>
+<script>(function(d){d.classList.replace('no-js','js');if(window.top!==window.self){d.style.display='none';try{window.top.location.replace(window.self.location.href);}catch(e){}}})(document.documentElement);</script>
 {{jsonld}}

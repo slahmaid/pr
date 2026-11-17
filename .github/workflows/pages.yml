@@ -1,6 +1,10 @@
 # Builds the site with `node build.mjs` and publishes dist/ to GitHub Pages
 # on every push to main (or manually from the Actions tab).
 # Requires: Settings → Pages → Build and deployment → Source = "GitHub Actions".
+#
+# Security: every action is pinned to a full commit SHA (a moved tag cannot
+# change what runs), each job gets only the permissions it needs, and the
+# checkout does not keep the GitHub token on disk. Dependabot proposes updates.
 name: Deploy to GitHub Pages
 
 on:
@@ -8,10 +12,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 concurrency:
   group: pages
@@ -20,25 +21,42 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
       - name: Build the site
         run: node build.mjs
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+      - name: Test the build
+        run: node --test
+      - name: Keep only what GitHub Pages serves
+        # _headers (Netlify/Cloudflare) and .htaccess (Apache) are for other hosts.
+        run: rm -f dist/_headers dist/.htaccess dist/.nojekyll
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: dist
+          # Publishes .well-known/security.txt (the only hidden file left).
+          include-hidden-files: true
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Publish to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

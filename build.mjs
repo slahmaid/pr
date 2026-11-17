@@ -49,9 +49,17 @@ const catalogue = json('data', 'produits.json');
 const partners = json('data', 'partenaires.json');
 
 /* ------------------------------------------------------------ security */
-// three.js is loaded from jsDelivr with Subresource Integrity (hash published by jsDelivr).
-const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
+// No third-party requests: fonts and three.js are served from this site, so no
+// CDN or Google server sees visitors' IP addresses and a CDN compromise cannot
+// inject code. three.js r160 is the exact jsDelivr file; the build refuses to
+// run if its hash ever changes.
+const THREE_URL = 'assets/vendor/three.module.min.js';
 const THREE_SRI = 'sha256-PmkKx9GAsKrfCJG+o57sZD4p4tPnXJmxholRhmX2m6Y=';
+{
+  const actual = `sha256-${createHash('sha256').update(readFileSync(join(root, THREE_URL))).digest('base64')}`;
+  if (actual !== THREE_SRI) throw new Error(`${THREE_URL}: empreinte inattendue (${actual})`);
+}
+const FONT_FILES = readdirSync(join(root, 'assets/fonts')).map((f) => `assets/fonts/${f}`);
 
 // The only inline script (adds the "js" class before first paint) is allowed by its hash.
 const bootScript = partial('head').match(/<script>([\s\S]*?)<\/script>/)[1];
@@ -60,21 +68,23 @@ const bootHash = createHash('sha256').update(bootScript).digest('base64');
 function makeCsp({ connect = ["'self'"], img = ["'self'", 'data:'] } = {}) {
   const directives = {
     'default-src': ["'self'"],
-    'script-src': ["'self'", `'sha256-${bootHash}'`, 'https://cdn.jsdelivr.net'],
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-    'font-src': ["'self'", 'https://fonts.gstatic.com'],
+    'script-src': ["'self'", `'sha256-${bootHash}'`],
+    // 'unsafe-inline' only for style attributes (CSS variables set by the scripts).
+    'style-src': ["'self'", "'unsafe-inline'"],
+    'font-src': ["'self'"],
     'img-src': img,
     'connect-src': connect,
     'object-src': ["'none'"],
-    // Google Maps embed on the contact page.
-    'frame-src': ['https://www.google.com', 'https://maps.google.com'],
+    // Google Maps embed on the contact page (loaded only after consent or a click).
+    'frame-src': ['https://www.google.com'],
+    'media-src': ["'self'"],
     'worker-src': ["'none'"],
     'manifest-src': ["'self'"],
     'base-uri': ["'self'"],
-    // Add your form service here when you connect the forms (e.g. https://formspree.io).
+    // The contact form is handed to WhatsApp by script; nothing is posted anywhere.
     'form-action': ["'self'"],
   };
-  return Object.entries(directives).map(([k, v]) => `${k} ${v.join(' ')}`).join('; ');
+  return Object.entries(directives).map(([k, v]) => (v.length ? `${k} ${v.join(' ')}` : k)).join('; ');
 }
 const cspMeta = makeCsp();
 const cspHeader = `${cspMeta}; frame-ancestors 'none'; upgrade-insecure-requests`;
@@ -295,7 +305,8 @@ out('data/produits-index.json', indexJson);
 versions['data/produits-index.json'] = shortHash(indexJson);
 
 const built = [];
-const assetRefs = new Set(['assets/img/logo-prumysl.svg']);
+// Files loaded from CSS or by script, not from a page attribute.
+const assetRefs = new Set(['assets/img/logo-prumysl.svg', THREE_URL, ...FONT_FILES]);
 
 function emitPage({ file, name, meta, body, note }) {
   const has3d = body.includes('data-tower');
@@ -314,7 +325,7 @@ function emitPage({ file, name, meta, body, note }) {
   if (pageUrl) metaTags.push(`<meta property="og:url" content="${pageUrl}">`);
 
   const preload = has3d
-    ? `<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>\n<link rel="modulepreload" href="${THREE_URL}" integrity="${THREE_SRI}" crossorigin="anonymous">`
+    ? `<link rel="modulepreload" href="${THREE_URL}" integrity="${THREE_SRI}">`
     : '';
 
   const current = (html) => html.replace(new RegExp(`data-nav="${meta.nav}"`, 'g'), `data-nav="${meta.nav}" aria-current="page"`);
@@ -465,11 +476,23 @@ for (const ref of assetRefs) {
 
 /* ------------------------------------------------------------ crawlers */
 const indexable = built.filter((p) => !p.meta.noindex);
-const hidden = built
-  .filter((p) => p.meta.noindex)
-  .sort((a, b) => a.file.localeCompare(b.file))
-  .flatMap((p) => [`Disallow: ${basePath}${p.file}`, `Disallow: ${basePath}${p.name}`]);
-out('robots.txt', `User-agent: *\nAllow: /\n${hidden.join('\n')}\n${siteUrl ? `\nSitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
+// Private pages (admin, 404) are NOT listed here: robots.txt is public and would
+// point attackers to them. They carry <meta name="robots" content="noindex">,
+// which search engines can only read if they are allowed to fetch the page.
+out('robots.txt', `User-agent: *\nAllow: /\n${siteUrl ? `\nSitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
+
+// RFC 9116: how to report a security problem. Renewed on every deploy.
+{
+  const expires = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const lines = [
+    `Contact: tel:${site.telephone}`,
+    siteUrl ? `Contact: ${publicUrl('contact')}` : '',
+    `Expires: ${expires}`,
+    'Preferred-Languages: fr, en',
+    siteUrl ? `Canonical: ${siteUrl}/.well-known/security.txt` : '',
+  ].filter(Boolean);
+  out('.well-known/security.txt', `${lines.join('\n')}\n`);
+}
 // GitHub Pages: publish files as they are (no Jekyll processing).
 out('.nojekyll', '');
 if (siteUrl) {
