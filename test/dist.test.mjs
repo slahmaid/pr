@@ -31,7 +31,8 @@ test('built site hides the admin and keeps the public catalogue light', () => {
     : `${FAMILY_WORDS[familyCount] || familyCount} familles, un seul fournisseur.`;
   assert.match(produits, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(produits, /Prumysl Solaire/);
-  assert.match(produits, /prumysl-solaire\.html/);
+  assert.match(produits, /href="prumysl-solaire"/);
+  assert.match(produits, /rel="canonical" href="https:\/\/slahmaid\.github\.io\/pr\/produits"/);
   assert.match(produits, /data-catalogue-search/);
   assert.match(produits, /data\/produits-index\.json\?v=/);
   assert.match(produits, /assets\/js\/catalogue-ui\.js\?v=/);
@@ -50,7 +51,8 @@ test('built site hides the admin and keeps the public catalogue light', () => {
     assert.equal(html.split('class="pitem"').length - 1, first);
     assert.match(html, /assets\/js\/catalogue-ui\.js\?v=/);
     assert.match(html, new RegExp(`data/produits-${cat.id}\\.json\\?v=`));
-    assert.match(sitemap, new RegExp(file.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(sitemap, new RegExp(`produits-${cat.id}</loc>`));
+    assert.doesNotMatch(html, /href="[^"]*\.html/);
     assert.equal(data.id, cat.id);
     assert.equal(data.products.length, expected.length);
     assert.deepEqual(data.products.map((p) => p.id), expected.map((p) => p.id));
@@ -63,8 +65,12 @@ test('built site hides the admin and keeps the public catalogue light', () => {
   }
 
   // Homepage still reaches at least the original families; leftover #cat- hashes should be gone.
-  assert.match(index, /produits-cables\.html/);
+  assert.match(index, /href="produits-cables"/);
+  assert.match(index, /href="\.\/"/);
+  assert.match(index, /rel="canonical" href="https:\/\/slahmaid\.github\.io\/pr\/"/);
+  assert.doesNotMatch(index, /href="[^"]*\.html/);
   assert.doesNotMatch(index, /produits\.html#cat-/);
+  assert.doesNotMatch(sitemap, /\.html/);
   assert.doesNotMatch(index, /admin\.html/);
   assert.doesNotMatch(index, /api\.github\.com/);
   assert.doesNotMatch(index, /\{\{extra\}\}/);
@@ -98,7 +104,9 @@ test('built site hides the admin and keeps the public catalogue light', () => {
   assert.equal(published.products.find((p) => p.id === 'projecteur-solaire').cat, 'eclairage-ext');
 
   assert.match(robots, /Disallow: \/pr\/admin\.html/);
+  assert.match(robots, /Disallow: \/pr\/admin\n/);
   assert.match(robots, /Disallow: \/pr\/404\.html/);
+  assert.match(robots, /Disallow: \/pr\/404\n/);
   assert.doesNotMatch(sitemap, /admin\.html/);
   assert.match(headers, /\/admin\.html\n {2}Content-Security-Policy:.*api\.github\.com/);
   assert.match(headers, /\/data\/\*/);

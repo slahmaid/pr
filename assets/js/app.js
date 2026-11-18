@@ -889,7 +889,7 @@
   // Legacy bookmarks: produits.html#cat-ventilation now opens the family page.
   const hashCat = (location.hash.match(/^#cat-([\w-]+)$/) || [])[1];
   if (hashCat && document.body.dataset.page === 'produits') {
-    const dest = `produits-${hashCat}.html`;
+    const dest = `produits-${hashCat}`;
     if (document.querySelector(`a[href^="${dest}"]`)) location.replace(dest);
   } else if (hashCat) {
     filterables.forEach((f) => f.setCat(hashCat));
@@ -1036,14 +1036,20 @@
     veil.setAttribute('aria-hidden', 'true');
     veil.innerHTML = [0, 1, 2, 3, 4].map((i) => '<i style="--i:' + i + '"></i>').join('');
     document.body.appendChild(veil);
-    const isHome = (p) => /\/(index\.html)?$/.test(p);
+    const isHome = (p) => /\/(index(\.html)?)?$/.test(p);
+    // .html files, directory indexes, and extensionless pages (/services).
+    const isSitePage = (pathname) => {
+      if (/(\.html|\/)$/.test(pathname)) return true;
+      const last = pathname.slice(pathname.lastIndexOf('/') + 1);
+      return last.length > 0 && !last.includes('.');
+    };
 
     document.addEventListener('click', (e) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const a = e.target.closest ? e.target.closest('a[href]') : null;
       if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
       const url = new URL(a.href, location.href);
-      if (url.origin !== location.origin || !/(\.html|\/)$/.test(url.pathname)) return;
+      if (url.origin !== location.origin || !isSitePage(url.pathname)) return;
       const samePage = url.pathname === location.pathname || (isHome(url.pathname) && isHome(location.pathname));
       if (samePage && url.search === location.search) {
         if (url.hash) return; // in-page anchor: the browser or the smooth-scroll handler deals with it

@@ -456,7 +456,7 @@ function formatBytes(size) {
 }
 
 async function watchDeploy(sha) {
-  const live = SITE.siteUrl ? `${SITE.siteUrl.replace(/\/+$/, '')}/produits.html` : 'produits.html';
+  const live = SITE.siteUrl ? `${SITE.siteUrl.replace(/\/+$/, '')}/produits` : 'produits';
   const started = Date.now();
   const limit = mockMode ? 6000 : 180000;
   const wait = mockMode ? 200 : 4000;
@@ -1083,7 +1083,7 @@ function saveCategory(form) {
 function renderLogin(message) {
   root.innerHTML = `
     <section class="admin-login" data-theme="dark">
-      <a class="logo" href="index.html" aria-label="Prumysl — accueil"><svg class="logo__svg" viewBox="0 0 265 80" aria-hidden="true"><use href="#logo"/></svg></a>
+      <a class="logo" href="./" aria-label="Prumysl — accueil"><svg class="logo__svg" viewBox="0 0 265 80" aria-hidden="true"><use href="#logo"/></svg></a>
       <div class="admin-card" data-theme="light">
         <p class="eyebrow">Administration</p>
         <h1 class="display">Catalogue</h1>
@@ -1150,12 +1150,12 @@ function renderApp() {
     <div class="admin-app">
       <header class="admin-bar" data-theme="dark">
         <div class="admin-bar__brand">
-          <a class="logo" href="index.html" aria-label="Prumysl — accueil"><svg class="logo__svg" viewBox="0 0 265 80" aria-hidden="true"><use href="#logo"/></svg></a>
+          <a class="logo" href="./" aria-label="Prumysl — accueil"><svg class="logo__svg" viewBox="0 0 265 80" aria-hidden="true"><use href="#logo"/></svg></a>
           <p class="eyebrow">Administration du catalogue</p>
         </div>
         <p class="admin-dirty" data-dirty hidden>Modifications non publiées</p>
         <div class="admin-bar__actions">
-          <a class="btn btn--sm" href="produits.html">Voir le catalogue</a>
+          <a class="btn btn--sm" href="produits">Voir le catalogue</a>
           <button type="button" class="btn btn--sm btn--solid" data-publish>Publier</button>
           <button type="button" class="admin-textbtn" data-logout>Déconnexion</button>
         </div>

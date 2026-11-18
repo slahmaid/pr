@@ -32,6 +32,19 @@ const siteUrl = (site.url || '').replace(/\/+$/, '');
 // Folder the site lives in: "/" on its own domain, "/pr/" on GitHub Pages.
 // The 404 page uses it so its links work at any depth.
 const basePath = siteUrl ? new URL(`${siteUrl}/`).pathname : '/';
+// Public address of a built page. Files stay *.html so the old addresses keep
+// working; GitHub Pages also serves them without the extension and without a
+// trailing slash (/services, not /services/). Home is the site root.
+const publicUrl = (name) => (siteUrl ? (name === 'index' ? `${siteUrl}/` : `${siteUrl}/${name}`) : '');
+function cleanPageLinks(html) {
+  return html.replace(/\shref="([^"]*)"/g, (full, href) => {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#') || href.startsWith('//')) return full;
+    const next = href
+      .replace(/(^|\/)index\.html(?=$|[?#])/g, '$1./')
+      .replace(/\.html(?=$|[?#])/g, '');
+    return next === href ? full : full.replace(href, next);
+  });
+}
 const catalogue = json('data', 'produits.json');
 const partners = json('data', 'partenaires.json');
 
@@ -286,7 +299,7 @@ const assetRefs = new Set(['assets/img/logo-prumysl.svg']);
 
 function emitPage({ file, name, meta, body, note }) {
   const has3d = body.includes('data-tower');
-  const pageUrl = siteUrl ? `${siteUrl}/${name === 'index' ? '' : file}` : '';
+  const pageUrl = publicUrl(name);
   const metaTags = [];
   if (meta.noindex) metaTags.push('<meta name="robots" content="noindex">');
   if (pageUrl && !meta.noindex) metaTags.push(`<link rel="canonical" href="${pageUrl}">`);
@@ -367,6 +380,7 @@ ${end}
 </html>
 `;
 
+  html = cleanPageLinks(html);
   html = html.replace(/<img (?![^>]*decoding=)/g, '<img decoding="async" ');
   for (const [asset, v] of Object.entries(versions)) html = html.split(`"${asset}"`).join(`"${asset}?v=${v}"`);
   for (const ref of html.matchAll(/(?:src|href)="(assets\/[^"?#]+)/g)) assetRefs.add(ref[1]);
@@ -454,13 +468,13 @@ const indexable = built.filter((p) => !p.meta.noindex);
 const hidden = built
   .filter((p) => p.meta.noindex)
   .sort((a, b) => a.file.localeCompare(b.file))
-  .map((p) => `Disallow: ${basePath}${p.file}`);
+  .flatMap((p) => [`Disallow: ${basePath}${p.file}`, `Disallow: ${basePath}${p.name}`]);
 out('robots.txt', `User-agent: *\nAllow: /\n${hidden.join('\n')}\n${siteUrl ? `\nSitemap: ${siteUrl}/sitemap.xml\n` : ''}`);
 // GitHub Pages: publish files as they are (no Jekyll processing).
 out('.nojekyll', '');
 if (siteUrl) {
   const today = new Date().toISOString().slice(0, 10);
-  const urls = indexable.map((p) => `  <url><loc>${siteUrl}/${p.name === 'index' ? '' : p.file}</loc><lastmod>${today}</lastmod></url>`).join('\n');
+  const urls = indexable.map((p) => `  <url><loc>${publicUrl(p.name)}</loc><lastmod>${today}</lastmod></url>`).join('\n');
   out('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
 } else {
   console.warn('! Renseignez "url" dans src/data/site.json pour générer sitemap.xml et les liens canoniques.');

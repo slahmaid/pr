@@ -3,7 +3,7 @@
 // production (read from dist/_headers), so problems show up before going live.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { headersFor, parseHeaderBlocks } from './src/build/headers.mjs';
@@ -49,7 +49,14 @@ createServer(async (req, res) => {
     res.writeHead(400).end('Bad request');
     return;
   }
+  // GitHub Pages serves services.html at /services (no trailing slash) and
+  // still serves the .html address. Mirror that so preview links match production.
   if (pathname.endsWith('/')) pathname += 'index.html';
+  else if (!extname(pathname)) {
+    const htmlPath = `${pathname}.html`;
+    const candidate = resolve(join(root, htmlPath));
+    if ((candidate === root || candidate.startsWith(root + sep)) && existsSync(candidate)) pathname = htmlPath;
+  }
   const file = resolve(join(root, pathname));
   const headers = responseHeaders(pathname);
   if (file !== root && !file.startsWith(root + sep)) {

@@ -322,7 +322,7 @@ function initSearch(root) {
         name,
         cat,
         label: labels[cat] || cat,
-        href: `produits-${cat}.html#p-${id}`,
+        href: `produits-${cat}#p-${id}`,
         _n: norm(name),
       }));
       setStatus('');
@@ -400,7 +400,7 @@ function redirectLegacyHash() {
   if (document.body.dataset.page !== 'produits') return;
   const cat = (location.hash.match(/^#cat-([\w-]+)$/) || [])[1];
   if (!cat) return;
-  const dest = `produits-${cat}.html`;
+  const dest = `produits-${cat}`;
   if (document.querySelector(`a[href^="${dest}"]`)) location.replace(dest);
 }
 
