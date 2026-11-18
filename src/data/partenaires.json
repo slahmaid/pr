@@ -1,11 +1,14 @@
 {
   "_note": "Ajoutez vos partenaires ici, puis lancez « node build.mjs ». name = nom affiché ; logo = chemin facultatif vers un fichier placé dans assets/img/partenaires/ (SVG ou PNG). Sans logo, le nom s'affiche en toutes lettres. Tant qu'une liste est vide, des emplacements vides s'affichent.",
   "fabricants": [
+    { "name": "Schneider Electric", "logo": "assets/img/partenaires/schneider-electric.png" },
+    { "name": "Legrand", "logo": "assets/img/partenaires/legrand.png" },
     { "name": "ABB", "logo": "assets/img/partenaires/abb.png" },
     { "name": "Hager", "logo": "assets/img/partenaires/hager.png" },
+    { "name": "Siemens", "logo": "assets/img/partenaires/siemens.png" },
     { "name": "Ingelec", "logo": "assets/img/partenaires/ingelec.png" },
-    { "name": "Philips", "logo": "assets/img/partenaires/philips.png" },
-    { "name": "Schneider Electric", "logo": "assets/img/partenaires/schneider-electric.png" }
+    { "name": "Nexans", "logo": "assets/img/partenaires/nexans.png" },
+    { "name": "Philips", "logo": "assets/img/partenaires/philips.png" }
   ],
   "clients": []
 }
